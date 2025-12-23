@@ -150,6 +150,10 @@ body {
   min-width: 90px;
   background: #fafafa;
 }
+/* 原 header 隐藏用 */
+.header.hidden {
+  visibility: hidden;   /* 占位但不显示 */
+}
 
 </style>
 </head>
@@ -415,15 +419,19 @@ deleteBtn.onclick = () => {
 // ===== FIXED HEADER SYNC =====
 const fixedHeader = document.getElementById('fixedHeader');
 
-// 在 render() 之后调用
 function updateFixedHeader() {
   const header = document.querySelector('.header');
   if (!header) return;
 
+  // clone 到 fixedHeader
   fixedHeader.innerHTML = '';
   fixedHeader.appendChild(header.cloneNode(true));
   fixedHeader.style.display = 'block';
+
+  // ⭐ 隐藏原本的 header（防重影）
+  header.classList.add('hidden');
 }
+
 
 // 改写 render：渲染完再生成 fixed header
 const _render = render;
