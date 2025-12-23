@@ -64,66 +64,26 @@ body {
 <script>
 const API_URL = 'https://script.google.com/macros/s/AKfycbzM7gYwIGqN2Yze4KuRpGen_3CKHoO7aq6gpkpmuPdKIP_6FHR_-mGWH76RM36Hg8ENrg/exec';
 
-const today = new Date();
-const days = [...Array(14)].map((_,i)=>{
-  const d = new Date(today);
-  d.setDate(today.getDate() + i);
-  return d.toISOString().slice(0,10);
-});
+console.log('script start');
 
 fetch(API_URL)
-  .then(r => r.json())
+  .then(r => {
+    console.log('fetch response', r);
+    return r.json();
+  })
   .then(data => {
-    render(data.rooms, data.bookings);
+    console.log('data received', data);
+
+    document.getElementById('app').innerHTML =
+      '<pre style="padding:16px">' +
+      JSON.stringify(data, null, 2) +
+      '</pre>';
+  })
+  .catch(err => {
+    console.error('FETCH ERROR', err);
+    document.getElementById('app').innerHTML =
+      '<div style="padding:20px;color:red">FETCH ERROR</div>';
   });
-
-function render(rooms, bookings) {
-  const app = document.getElementById('app');
-  app.innerHTML = '';
-
-  /* Header */
-  const header = document.createElement('div');
-  header.className = 'header';
-
-  const empty = document.createElement('div');
-  empty.className = 'room-col';
-  header.appendChild(empty);
-
-  days.forEach(d=>{
-    const cell = document.createElement('div');
-    cell.className = 'cell';
-    cell.textContent = d.slice(5);
-    header.appendChild(cell);
-  });
-
-  app.appendChild(header);
-
-  /* Rows */
-  rooms.forEach(room=>{
-    const row = document.createElement('div');
-    row.className = 'row';
-
-    const label = document.createElement('div');
-    label.className = 'room-col';
-    label.textContent = room;
-    row.appendChild(label);
-
-    days.forEach(day=>{
-      const cell = document.createElement('div');
-
-      const isBooked = bookings.some(b =>
-        b.room === room &&
-        day >= b.checkIn &&
-        day < b.checkOut
-      );
-
-      cell.className = 'cell ' + (isBooked ? 'booked' : 'free');
-      row.appendChild(cell);
-    });
-
-    app.appendChild(row);
-  });
-}
 </script>
 
 </body>
