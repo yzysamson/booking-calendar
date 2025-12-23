@@ -62,7 +62,7 @@ body {
 <div class="wrapper" id="app"></div>
 
 <script>
-const API_URL = 'https://script.google.com/macros/s/AKfycbxC9DTpJwqM32vj1uXlimMS797lt96Pk_m6w3CkNYdU5hu-c8Vl0UXiSRA8zyoV8ViEcQ/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycbxbqGeeQ6g5A8pBIr7vqhxYvIsnmRymo7fSOgLgV2G9jb1xHTlnm6iqo4mSGwwlfeYbKg/exec';
 
 /* 未来 14 天 */
 const today = new Date();
@@ -115,24 +115,79 @@ function drawGrid(rooms, bookings) {
     label.textContent = room;
     row.appendChild(label);
 
+    
     days.forEach(day => {
-      const cell = document.createElement('div');
+  const cell = document.createElement('div');
 
-      const isBooked = bookings.some(b =>
-        b.room === room &&
-        day >= b.checkIn &&
-        day < b.checkOut
-      );
+  const isBooked = bookings.some(b =>
+    b.room === room &&
+    day >= b.checkIn &&
+    day < b.checkOut
+  );
 
-      cell.className = 'cell ' + (isBooked ? 'booked' : 'free');
-      row.appendChild(cell);
-    });
+  cell.className = 'cell ' + (isBooked ? 'booked' : 'free');
+
+  // 👇 新增：点击事件
+  cell.onclick = () => {
+    openModal(room, day);
+  };
+
+  row.appendChild(cell);
+});
 
     app.appendChild(row);
   });
 }
+
+function openModal(room, date) {
+  document.getElementById('modal').style.display = 'block';
+  document.getElementById('roomInput').value = room;
+  document.getElementById('checkInInput').value = date;
+
+  // 默认 checkout = next day
+  const d = new Date(date);
+  d.setDate(d.getDate() + 1);
+  document.getElementById('checkOutInput').value =
+    d.toISOString().slice(0,10);
+}
+
+function closeModal() {
+  document.getElementById('modal').style.display = 'none';
+}
+
 </script>
 
+<!-- Booking Modal -->
+<div id="modal" style="
+  display:none;
+  position:fixed;
+  top:0;left:0;right:0;bottom:0;
+  background:rgba(0,0,0,0.4);
+  z-index:999;
+">
+  <div style="
+    background:#fff;
+    margin:15% auto;
+    padding:20px;
+    width:90%;
+    max-width:320px;
+    border-radius:8px;
+  ">
+    <h3 id="modal-title">New Booking</h3>
+
+    <label>Room</label>
+    <input id="roomInput" readonly style="width:100%"><br><br>
+
+    <label>Check-in</label>
+    <input id="checkInInput" type="date" style="width:100%"><br><br>
+
+    <label>Check-out</label>
+    <input id="checkOutInput" type="date" style="width:100%"><br><br>
+
+    <button onclick="saveBooking()">Save</button>
+    <button onclick="closeModal()">Cancel</button>
+  </div>
+</div>
 
 
 </body>
