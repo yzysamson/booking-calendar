@@ -111,6 +111,28 @@ body {
   z-index: 5;
 }
 
+/* ===== FIX: prevent room-col highlight ===== */
+
+/* 如果 row 有 hover，不让它影响 */
+.row:hover {
+  background: transparent;
+}
+
+/* Room 列永远保持原色 */
+.room-col {
+  background: #fafafa !important;
+}
+
+/* 只让 cell 有 hover 反馈 */
+.cell:hover {
+  background: #fff2d6;
+}
+
+/* 点击时 */
+.cell:active {
+  background: #ffe4b5;
+}
+
 </style>
 </head>
 
