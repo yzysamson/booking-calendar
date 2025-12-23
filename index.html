@@ -12,13 +12,15 @@
   --room-w: 84px;
 
   --border: #e5e5ea;
-  --free: #f4fbf6;
-  --booked: #fdebec;
-  --accent: #34c759;
+
+  --free: #F4FBF6;
+  --booked: #F24E7C;
+  --bg: #FFF8EB;
+
+  --accent: #34C759;
 
   --text: #1c1c1e;
   --muted: #8e8e93;
-  --bg: #ffffff;
 }
 
 * {
@@ -36,7 +38,7 @@ body {
 /* ===== TOP BAR ===== */
 .topbar {
   padding: 6px 10px;
-  background: var(--bg);
+  background: #fff;
   position: sticky;
   top: 0;
   z-index: 20;
@@ -50,7 +52,7 @@ body {
   -webkit-overflow-scrolling: touch;
 }
 
-/* ===== GRID CORE (绝对不能动) ===== */
+/* ===== GRID CORE (不能动) ===== */
 .header,
 .row {
   display: grid;
@@ -82,14 +84,14 @@ body {
   position: sticky;
   top: 36px;
   z-index: 10;
-  background: var(--bg);
+  background: #fff;
 }
 
 .header .cell {
   font-size: 11px;
   font-weight: 500;
   color: var(--muted);
-  background: var(--bg);
+  background: #fff;
 }
 
 /* ===== CELL ===== */
@@ -109,22 +111,51 @@ body {
   z-index: 1;
 }
 
-/* ===== STATES ===== */
+/* ===== FREE ===== */
 .free {
   background: var(--free);
 }
 
+/* ===== BOOKED (BASE) ===== */
 .booked {
   background: var(--booked);
+  color: #fff;
+  border-color: var(--booked);
+  border-radius: 0;
 }
 
+/* ===== AIRBNB-STYLE PILL ===== */
+.booked.start {
+  border-top-left-radius: 999px;
+  border-bottom-left-radius: 999px;
+}
+
+.booked.end {
+  border-top-right-radius: 999px;
+  border-bottom-right-radius: 999px;
+}
+
+.booked.single {
+  border-radius: 999px;
+}
+
+/* 让连续 booking 看起来是一条 */
+.booked:not(.start) {
+  border-left-color: transparent;
+}
+
+.booked:not(.end) {
+  border-right-color: transparent;
+}
+
+/* ===== SELECTED (新建时高亮) ===== */
 .selected {
   outline: 2px solid var(--accent);
   outline-offset: -2px;
   border-radius: 6px;
 }
 
-/* ===== DESKTOP HOVER (安全) ===== */
+/* ===== DESKTOP HOVER（安全，不影响手机） ===== */
 @media (hover: hover) {
   .cell.free:hover {
     background: #eaf7ef;
@@ -363,12 +394,36 @@ function updateCells() {
   document.querySelectorAll('.row').forEach(row => {
     const room = row.querySelector('.room-col').textContent;
     const cells = row.querySelectorAll('.cell');
-    cells.forEach((cell,idx)=>{
-      if(idx===0) return;
-      const day = DAYS[idx-1];
+
+    cells.forEach((cell, idx) => {
+      if (idx === 0) return;
+
+      const day = DAYS[idx - 1];
       cell.dataset.date = day;
-      cell.className = 'cell ' +
-        (BOOKED_MAP[`${room}|${day}`] ? 'booked':'free');
+
+      const key = `${room}|${day}`;
+      cell.className = 'cell';
+
+      if (BOOKED_MAP[key]) {
+        cell.classList.add('booked');
+
+        const prevDay = DAYS[idx - 2];
+        const nextDay = DAYS[idx];
+
+        const hasPrev = prevDay && BOOKED_MAP[`${room}|${prevDay}`];
+        const hasNext = nextDay && BOOKED_MAP[`${room}|${nextDay}`];
+
+        if (!hasPrev && !hasNext) {
+          cell.classList.add('single');
+        } else if (!hasPrev && hasNext) {
+          cell.classList.add('start');
+        } else if (hasPrev && !hasNext) {
+          cell.classList.add('end');
+        }
+        // 中间段不需要额外 class
+      } else {
+        cell.classList.add('free');
+      }
     });
   });
 }
