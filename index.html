@@ -445,6 +445,17 @@ document.getElementById('app').addEventListener('scroll', (e) => {
   fixedHeader.scrollLeft = e.target.scrollLeft;
 });
 
+document.addEventListener('scroll', () => {
+  const header = document.querySelector('.header');
+  if (!header) return;
+
+  if (window.scrollY < 40) {
+    // 回到顶部：显示原 header，隐藏 fixedHeader
+    header.classList.remove('hidden');
+    fixedHeader.style.display = 'none';
+  }
+});
+
 </script>
 
 </body>
