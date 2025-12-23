@@ -6,34 +6,121 @@
 <title>Booking Calendar</title>
 
 <style>
-body { margin:0; font-family:Arial,sans-serif; }
-.topbar { padding:8px; background:#fff; position:sticky; top:0; z-index:10; border-bottom:1px solid #ddd; }
-.wrapper { overflow-x:auto; }
-.header, .row { display:grid; grid-auto-flow:column; }
-.room-col {
-  width:100px; min-width:100px; background:#f5f5f5;
-  border-right:1px solid #ccc; font-weight:bold;
-  text-align:center; line-height:44px;
-  position:sticky; left:0; z-index:2;
+:root {
+  --row-h: 34px;
+  --cell-w: 56px;
+  --border: #e5e5ea;
+  --free: #eef9f1;
+  --booked: #fbe4e6;
+  --accent: #34c759;
+  --text: #1c1c1e;
 }
-.cell {
-  width:72px; height:44px; border:1px solid #eee;
-  text-align:center; line-height:44px;
-  font-size:12px; touch-action:manipulation;
-}
-.header .cell { font-weight:bold; background:#fff; position:sticky; top:40px; z-index:3; }
-.free { background:#e8fbe8; }
-.booked { background:#f8b4b4; }
-.selected { outline:3px solid #4caf50; }
 
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text",
+               "Helvetica Neue", Arial, sans-serif;
+  color: var(--text);
+}
+
+.topbar {
+  padding: 6px 10px;
+  background: #fff;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  border-bottom: 1px solid var(--border);
+}
+
+.wrapper {
+  overflow-x: auto;
+}
+
+.header, .row {
+  display: grid;
+  grid-auto-flow: column;
+}
+
+.room-col {
+  width: 90px;
+  min-width: 90px;
+  background: #fafafa;
+  border-right: 1px solid var(--border);
+  font-size: 13px;
+  line-height: var(--row-h);
+  text-align: center;
+  position: sticky;
+  left: 0;
+  z-index: 2;
+}
+
+.cell {
+  width: var(--cell-w);
+  height: var(--row-h);
+  border: 1px solid var(--border);
+  font-size: 12px;
+  line-height: var(--row-h);
+  text-align: center;
+  touch-action: manipulation;
+}
+
+.header .cell {
+  font-weight: 500;
+  background: #fff;
+  position: sticky;
+  top: 38px;
+  z-index: 3;
+}
+
+.free { background: var(--free); }
+.booked { background: var(--booked); }
+
+.selected {
+  outline: 2px solid var(--accent);
+  z-index: 4;
+}
+
+/* Modal */
 .modal {
-  display:none; position:fixed; inset:0;
-  background:rgba(0,0,0,.4); z-index:99;
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.35);
+  z-index: 99;
 }
 .modal-box {
-  background:#fff; margin:20% auto; padding:16px;
-  width:90%; max-width:320px; border-radius:8px;
+  background: #fff;
+  margin: 22% auto;
+  padding: 14px;
+  width: 90%;
+  max-width: 320px;
+  border-radius: 14px;
 }
+.modal-box h3 {
+  margin: 0 0 10px;
+  font-size: 16px;
+}
+.modal-box label {
+  font-size: 12px;
+  color: #666;
+}
+.modal-box input,
+.modal-box select {
+  width: 100%;
+  margin-bottom: 8px;
+  height: 32px;
+}
+.modal-box button {
+  width: 100%;
+  height: 36px;
+  margin-top: 6px;
+  border-radius: 10px;
+  border: none;
+  font-size: 14px;
+}
+.primary { background: var(--accent); color: #fff; }
+.danger { background: #ff3b30; color: #fff; }
+.secondary { background: #e5e5ea; }
 </style>
 </head>
 
@@ -45,23 +132,23 @@ body { margin:0; font-family:Arial,sans-serif; }
 
 <div class="wrapper" id="app"></div>
 
-<!-- ADD / EDIT MODAL -->
+<!-- MODAL -->
 <div id="bookingModal" class="modal">
   <div class="modal-box">
     <h3 id="modalTitle">Booking</h3>
 
     <label>Room</label>
-    <select id="roomSelect" style="width:100%;margin-bottom:8px"></select>
+    <select id="roomSelect"></select>
 
     <label>Check-in</label>
-    <input id="checkInInput" readonly style="width:100%;margin-bottom:8px">
+    <input id="checkInInput" readonly>
 
     <label>Check-out</label>
-    <input id="checkOutInput" readonly style="width:100%;margin-bottom:8px">
+    <input id="checkOutInput" readonly>
 
-    <button id="saveBtn">Save</button>
-    <button id="deleteBtn">Delete</button>
-    <button onclick="closeModal()">Close</button>
+    <button id="actionBtn" class="primary">Save</button>
+    <button id="deleteBtn" class="danger">Delete</button>
+    <button class="secondary" onclick="closeModal()">Close</button>
   </div>
 </div>
 
@@ -80,6 +167,7 @@ let SELECTED_ROOM = null;
 let SELECTED_START = null;
 let CURRENT_EDIT = null;
 
+/* ===== ELEMENTS ===== */
 const app = document.getElementById('app');
 const monthPicker = document.getElementById('monthPicker');
 
@@ -87,16 +175,12 @@ const monthPicker = document.getElementById('monthPicker');
 CURRENT_MONTH = new Date().toISOString().slice(0,7);
 monthPicker.value = CURRENT_MONTH;
 
-fetch(API_URL, { cache:'no-store' })
-  .then(r => r.json())
-  .then(data => {
-    ROOMS = data.rooms;
-    BOOKINGS = data.bookings;
-    BOOKED_MAP = buildBookedMap(BOOKINGS);
-    DAYS = buildMonthDays(CURRENT_MONTH);
-    renderGrid();
-  });
+loadData(true);
 
+/* ===== LEVEL 2: AUTO REFRESH ===== */
+setInterval(() => silentRefresh(), 5000);
+
+/* ===== EVENTS ===== */
 monthPicker.addEventListener('change', e => {
   CURRENT_MONTH = e.target.value;
   DAYS = buildMonthDays(CURRENT_MONTH);
@@ -104,7 +188,40 @@ monthPicker.addEventListener('change', e => {
   clearSelection();
 });
 
-/* ===== DATE ===== */
+/* ===== DATA ===== */
+function loadData(initial=false) {
+  fetch(API_URL, { cache:'no-store' })
+    .then(r => r.json())
+    .then(data => {
+      ROOMS = data.rooms;
+      BOOKINGS = data.bookings;
+      BOOKED_MAP = buildBookedMap(BOOKINGS);
+      DAYS = buildMonthDays(CURRENT_MONTH);
+      if (initial) renderGrid();
+      else updateCells();
+    });
+}
+
+function silentRefresh() {
+  fetch(API_URL, { cache:'no-store' })
+    .then(r => r.json())
+    .then(data => {
+      const newMap = buildBookedMap(data.bookings);
+      if (!sameMap(newMap, BOOKED_MAP)) {
+        BOOKINGS = data.bookings;
+        BOOKED_MAP = newMap;
+        updateCells();
+      }
+    });
+}
+
+function sameMap(a,b) {
+  const ka = Object.keys(a);
+  const kb = Object.keys(b);
+  if (ka.length !== kb.length) return false;
+  return ka.every(k => b[k]);
+}
+
 function buildMonthDays(month) {
   const [y,m] = month.split('-').map(Number);
   const total = new Date(y,m,0).getDate();
@@ -152,6 +269,7 @@ function renderGrid() {
     });
     app.appendChild(row);
   });
+
   updateMonthView();
 }
 
@@ -176,11 +294,12 @@ function updateCells() {
   document.querySelectorAll('.row').forEach(row => {
     const room = row.querySelector('.room-col').textContent;
     const cells = row.querySelectorAll('.cell');
-    cells.forEach((cell,idx) => {
-      if (idx===0) return;
+    cells.forEach((cell,idx)=>{
+      if(idx===0) return;
       const day = DAYS[idx-1];
       cell.dataset.date = day;
-      cell.className = 'cell ' + (BOOKED_MAP[`${room}|${day}`] ? 'booked':'free');
+      cell.className = 'cell ' +
+        (BOOKED_MAP[`${room}|${day}`] ? 'booked':'free');
     });
   });
 }
@@ -195,27 +314,23 @@ app.addEventListener('click', e => {
   const day = cell.dataset.date;
   const booking = BOOKED_MAP[`${room}|${day}`];
 
-  if (booking) {
-    openEditModal(booking);
-  } else {
-    onNewClick(room, day);
-  }
+  if (booking) openEditModal(booking);
+  else handleNewClick(room, day);
 });
 
-/* ===== NEW BOOKING ===== */
-function onNewClick(room, day) {
+/* ===== NEW ===== */
+function handleNewClick(room, day) {
   clearSelection();
-  if (!SELECTED_START || SELECTED_ROOM!==room) {
+  if (!SELECTED_START || SELECTED_ROOM !== room) {
     SELECTED_ROOM = room;
     SELECTED_START = day;
     highlight(room,day,day);
     return;
   }
-  if (day>SELECTED_START) {
+  if (day > SELECTED_START) {
     openNewModal(room, SELECTED_START, day);
+    SELECTED_ROOM = SELECTED_START = null;
     clearSelection();
-    SELECTED_ROOM = null;
-    SELECTED_START = null;
   } else {
     SELECTED_START = day;
     highlight(room,day,day);
@@ -223,41 +338,42 @@ function onNewClick(room, day) {
 }
 
 /* ===== MODAL ===== */
-function openNewModal(room, checkIn, checkOut) {
+function populateRooms(selected) {
+  roomSelect.innerHTML = '';
+  ROOMS.forEach(r=>{
+    const o=document.createElement('option');
+    o.value=r; o.textContent=r;
+    if(r===selected) o.selected=true;
+    roomSelect.appendChild(o);
+  });
+}
+
+function openNewModal(room, ci, co) {
   CURRENT_EDIT = null;
   modalTitle.textContent = 'New Booking';
+  actionBtn.textContent = 'Save';
   deleteBtn.style.display = 'none';
-  populateRoomSelect(room);
-  checkInInput.value = checkIn;
-  checkOutInput.value = checkOut;
+  populateRooms(room);
+  checkInInput.value = ci;
+  checkOutInput.value = co;
   bookingModal.style.display = 'block';
 }
 
 function openEditModal(b) {
   CURRENT_EDIT = b;
   modalTitle.textContent = 'Edit Booking';
-  deleteBtn.style.display = 'inline-block';
-  populateRoomSelect(b.room);
+  actionBtn.textContent = 'Update';
+  deleteBtn.style.display = 'block';
+  populateRooms(b.room);
   checkInInput.value = b.checkIn;
   checkOutInput.value = b.checkOut;
   bookingModal.style.display = 'block';
 }
 
-function populateRoomSelect(selected) {
-  roomSelect.innerHTML = '';
-  ROOMS.forEach(r => {
-    const o = document.createElement('option');
-    o.value = r;
-    o.textContent = r;
-    if (r===selected) o.selected = true;
-    roomSelect.appendChild(o);
-  });
-}
+window.closeModal = ()=> bookingModal.style.display='none';
 
-window.closeModal = () => bookingModal.style.display = 'none';
-
-/* ===== SAVE / DELETE ===== */
-saveBtn.onclick = () => {
+/* ===== SAVE / UPDATE / DELETE ===== */
+actionBtn.onclick = () => {
   const payload = {
     action: CURRENT_EDIT ? 'update' : 'create',
     old: CURRENT_EDIT,
@@ -265,24 +381,34 @@ saveBtn.onclick = () => {
     checkIn: checkInInput.value,
     checkOut: checkOutInput.value
   };
+
   fetch(API_URL,{method:'POST',body:JSON.stringify(payload)})
     .then(r=>r.json())
-    .then(()=>location.reload());
+    .then(res=>{
+      if(res.status==='conflict'){
+        alert('Room status updated. Please try again.');
+        return;
+      }
+      loadData(); // 局部更新，不白屏
+      closeModal();
+    });
 };
 
 deleteBtn.onclick = () => {
   fetch(API_URL,{
     method:'POST',
-    body:JSON.stringify({ action:'delete', booking: CURRENT_EDIT })
-  }).then(()=>location.reload());
+    body:JSON.stringify({action:'delete', booking: CURRENT_EDIT})
+  }).then(()=>{ loadData(); closeModal(); });
 };
 
-/* ===== UTIL ===== */
+/* ===== UI HELPERS ===== */
 function highlight(room,start,end){
   document.querySelectorAll('.cell').forEach(c=>c.classList.remove('selected'));
-  document.querySelectorAll(`.cell[data-room="${room}"]`).forEach(c=>{
-    if(c.dataset.date>=start && c.dataset.date<=end) c.classList.add('selected');
-  });
+  document.querySelectorAll(`.cell[data-room="${room}"]`)
+    .forEach(c=>{
+      if(c.dataset.date>=start && c.dataset.date<=end)
+        c.classList.add('selected');
+    });
 }
 function clearSelection(){
   document.querySelectorAll('.cell').forEach(c=>c.classList.remove('selected'));
