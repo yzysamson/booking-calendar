@@ -10,48 +10,41 @@
   --row-h: 30px;
   --cell-w: 52px;
   --room-w: 84px;
-
   --border: #e5e5ea;
-
-  --free: #FFF8EB;      /* 👈 没被 book 的格子 */
-  --booked: #F24E7C;    /* 👈 已 book 的深色 */
-
+  --free: #FFF8EB;
+  --booked: #F24E7C;
   --accent: #34C759;
-
   --text: #1c1c1e;
   --muted: #8e8e93;
 }
 
-* {
-  box-sizing: border-box;
-}
+* { box-sizing: border-box; }
 
 body {
   margin: 0;
-  background: #ffffff;   /* 👈 页面背景回白 */
+  background: #fff;
   font-family: -apple-system, BlinkMacSystemFont,
-    "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+    "SF Pro Text","Helvetica Neue",Arial,sans-serif;
   color: var(--text);
 }
 
 /* ===== TOP BAR ===== */
 .topbar {
   padding: 6px 10px;
-  background: #ffffff;
+  background: #fff;
   position: sticky;
   top: 0;
-  z-index: 20;
+  z-index: 50;
   border-bottom: 0.5px solid var(--border);
 }
 
-/* ===== SCROLL WRAPPER ===== */
+/* ===== SCROLL ===== */
 .wrapper {
   overflow-x: auto;
-  overflow-y: auto;
   -webkit-overflow-scrolling: touch;
 }
 
-/* ===== GRID CORE（不能动） ===== */
+/* ===== GRID ===== */
 .header,
 .row {
   display: grid;
@@ -59,37 +52,35 @@ body {
   grid-auto-columns: min-content;
 }
 
-/* ===== ROOM COLUMN ===== */
-.room-col {
+/* ===== HEADER ===== */
+.header {
+  position: sticky;
+  top: 42px;
+  z-index: 20;
+  background: #fff;
+}
+
+/* 左上角占位（不 sticky） */
+.corner {
+  width: var(--room-w);
+  min-width: var(--room-w);
+  height: var(--row-h);
+}
+
+/* ===== ROOM COLUMN（只在 row 里 sticky） ===== */
+.row .room-col {
   width: var(--room-w);
   min-width: var(--room-w);
   height: var(--row-h);
   line-height: var(--row-h);
-
   background: #fafafa;
   border-right: 0.5px solid var(--border);
-
   font-size: 12px;
   font-weight: 500;
   text-align: center;
-
   position: sticky;
   left: 0;
-  z-index: 30;
-}
-
-/* ===== HEADER ROW ===== */
-.header {
-  position: sticky;
-  z-index: 10;
-  background: #ffffff;
-}
-
-.header .cell {
-  font-size: 11px;
-  font-weight: 500;
-  color: var(--muted);
-  background: #ffffff;
+  z-index: 40;
 }
 
 /* ===== CELL ===== */
@@ -97,152 +88,50 @@ body {
   width: var(--cell-w);
   height: var(--row-h);
   line-height: var(--row-h);
-
   border: 0.5px solid var(--border);
   font-size: 11px;
   text-align: center;
-
   user-select: none;
   touch-action: manipulation;
-
   position: relative;
-  z-index: 1;
 }
 
-/* ===== FREE (未被 booking) ===== */
-.free {
-  background: var(--free);
+/* ===== HEADER CELL ===== */
+.header .cell {
+  font-weight: 500;
+  color: var(--muted);
+  background: #fff;
 }
 
-/* ===== BOOKED (基础) ===== */
+/* ===== STATES ===== */
+.free { background: var(--free); }
+
 .booked {
   background: var(--booked);
-  color: #ffffff;
+  color: #fff;
   border-color: var(--booked);
-  border-radius: 0;
 }
 
-/* ===== AIRBNB-STYLE PILL ===== */
+/* ===== AIRBNB PILL ===== */
 .booked.start {
   border-top-left-radius: 999px;
   border-bottom-left-radius: 999px;
 }
-
 .booked.end {
   border-top-right-radius: 999px;
   border-bottom-right-radius: 999px;
 }
-
 .booked.single {
   border-radius: 999px;
 }
+.booked:not(.start) { border-left-color: transparent; }
+.booked:not(.end) { border-right-color: transparent; }
 
-/* 让连续 booking 连成一条 */
-.booked:not(.start) {
-  border-left-color: transparent;
-}
-
-.booked:not(.end) {
-  border-right-color: transparent;
-}
-
-/* ===== SELECTED（新建 booking 时） ===== */
+/* ===== SELECTED ===== */
 .selected {
   outline: 2px solid var(--accent);
   outline-offset: -2px;
   border-radius: 6px;
-}
-
-/* ===== DESKTOP HOVER（安全） ===== */
-@media (hover: hover) {
-  .cell.free:hover {
-    background: #fff2d6;
-  }
-}
-
-/* ===== MODAL ===== */
-.modal {
-  display: none;
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,.35);
-  z-index: 100;
-}
-
-.modal-box {
-  background: #ffffff;
-  margin: 22% auto;
-  padding: 14px;
-  width: 90%;
-  max-width: 320px;
-  border-radius: 16px;
-}
-
-.modal-box h3 {
-  margin: 0 0 10px;
-  font-size: 16px;
-  font-weight: 600;
-}
-
-.modal-box label {
-  font-size: 12px;
-  color: var(--muted);
-}
-
-.modal-box input,
-.modal-box select {
-  width: 100%;
-  height: 32px;
-  margin-bottom: 8px;
-  font-size: 14px;
-}
-
-.modal-box button {
-  width: 100%;
-  height: 36px;
-  margin-top: 6px;
-  border-radius: 10px;
-  border: none;
-  font-size: 14px;
-}
-
-.primary {
-  background: var(--accent);
-  color: #ffffff;
-}
-
-.secondary {
-  background: #e5e5ea;
-}
-
-.danger {
-  background: #ff3b30;
-  color: #ffffff;
-}
-
-/* ===== FIX: HEADER 左上角不要 sticky ===== */
-
-/* Header 里的 room-col 取消 sticky */
-.header .room-col {
-  position: relative !important;
-  left: auto !important;
-  z-index: 1 !important;
-  background: #ffffff;
-}
-
-/* 真正的 Room 列（row 里的）保持 sticky */
-.row .room-col {
-  position: sticky;
-  left: 0;
-  z-index: 30;
-}
-
-/* Header 本身只负责横向，不和 row 抢纵向 */
-.header {
-  position: sticky;
-  top: 42px;   /* 对齐 topbar */
-  z-index: 10;
-  height: var(--row-h);
 }
 
 </style>
@@ -372,7 +261,9 @@ function renderGrid() {
   app.innerHTML = '';
   const header = document.createElement('div');
   header.className = 'header';
-  header.appendChild(document.createElement('div')).className = 'room-col';
+  const corner = document.createElement('div');
+  corner.className = 'corner';
+  header.appendChild(corner);
   app.appendChild(header);
 
   ROOMS.forEach(room => {
