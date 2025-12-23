@@ -62,50 +62,68 @@ body {
 <div class="wrapper" id="app"></div>
 
 <script>
-const rooms = ['A1','A2','A3','A4'];
+const API_URL = '粘贴你的 Apps Script Web App URL';
+
+const today = new Date();
 const days = [...Array(14)].map((_,i)=>{
-  const d = new Date();
-  d.setDate(d.getDate() + i);
-  return d.toISOString().slice(5,10); // MM-DD
+  const d = new Date(today);
+  d.setDate(today.getDate() + i);
+  return d.toISOString().slice(0,10);
 });
 
-const app = document.getElementById('app');
-
-/* Header (Date X-axis) */
-const header = document.createElement('div');
-header.className = 'header';
-
-const empty = document.createElement('div');
-empty.className = 'room-col';
-header.appendChild(empty);
-
-days.forEach(d=>{
-  const cell = document.createElement('div');
-  cell.className = 'cell';
-  cell.textContent = d;
-  header.appendChild(cell);
-});
-
-app.appendChild(header);
-
-/* Rows (Room Y-axis) */
-rooms.forEach(room=>{
-  const row = document.createElement('div');
-  row.className = 'row';
-
-  const label = document.createElement('div');
-  label.className = 'room-col';
-  label.textContent = room;
-  row.appendChild(label);
-
-  days.forEach(()=>{
-    const cell = document.createElement('div');
-    cell.className = 'cell free';
-    row.appendChild(cell);
+fetch(API_URL)
+  .then(r => r.json())
+  .then(data => {
+    render(data.rooms, data.bookings);
   });
 
-  app.appendChild(row);
-});
+function render(rooms, bookings) {
+  const app = document.getElementById('app');
+  app.innerHTML = '';
+
+  /* Header */
+  const header = document.createElement('div');
+  header.className = 'header';
+
+  const empty = document.createElement('div');
+  empty.className = 'room-col';
+  header.appendChild(empty);
+
+  days.forEach(d=>{
+    const cell = document.createElement('div');
+    cell.className = 'cell';
+    cell.textContent = d.slice(5);
+    header.appendChild(cell);
+  });
+
+  app.appendChild(header);
+
+  /* Rows */
+  rooms.forEach(room=>{
+    const row = document.createElement('div');
+    row.className = 'row';
+
+    const label = document.createElement('div');
+    label.className = 'room-col';
+    label.textContent = room;
+    row.appendChild(label);
+
+    days.forEach(day=>{
+      const cell = document.createElement('div');
+
+      const isBooked = bookings.some(b =>
+        b.room === room &&
+        day >= b.checkIn &&
+        day < b.checkOut
+      );
+
+      cell.className = 'cell ' + (isBooked ? 'booked' : 'free');
+      row.appendChild(cell);
+    });
+
+    app.appendChild(row);
+  });
+}
 </script>
 
 </body>
