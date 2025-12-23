@@ -134,6 +134,57 @@ body {
   border-radius: 6px;
 }
 
+/* =========================
+   EMERGENCY STOP-BLEED CSS
+   ========================= */
+
+/* 1️⃣ 先全部取消 sticky */
+.header,
+.room-col {
+  position: relative !important;
+  top: auto !important;
+  left: auto !important;
+  z-index: auto !important;
+}
+
+/* 2️⃣ wrapper 只允许横向滚，禁止纵向 */
+.wrapper {
+  overflow-x: auto !important;
+  overflow-y: visible !important;
+}
+
+/* 3️⃣ 确保 cell 一定能被点到 */
+.cell {
+  pointer-events: auto !important;
+  position: relative;
+  z-index: 1;
+}
+
+/* 4️⃣ 所有可能挡住的层，禁止吃点击 */
+.header,
+.corner {
+  pointer-events: none !important;
+}
+
+/* 5️⃣ header 里的 cell 允许点击（日期） */
+.header .cell {
+  pointer-events: auto !important;
+}
+
+/* 6️⃣ 临时去掉所有视觉复杂效果 */
+.booked,
+.selected {
+  border-radius: 0 !important;
+}
+
+/* 7️⃣ 确保 grid 还是横的 */
+.header,
+.row {
+  display: grid !important;
+  grid-auto-flow: column !important;
+  grid-auto-columns: min-content !important;
+}
+
 </style>
 </head>
 
