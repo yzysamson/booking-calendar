@@ -64,27 +64,77 @@ body {
 <script>
 const API_URL = 'https://script.google.com/macros/s/AKfycbxC9DTpJwqM32vj1uXlimMS797lt96Pk_m6w3CkNYdU5hu-c8Vl0UXiSRA8zyoV8ViEcQ/exec';
 
-console.log('script start');
+/* 生成未来 14 天 */
+const today = new Date();
+const days = [...Array(14)].map((_, i) => {
+  const d = new Date(today);
+  d.setDate(today.getDate() + i);
+  return d.toISOString().slice(0, 10); // yyyy-mm-dd
+});
 
-fetch(API_URL)
-  .then(r => {
-    console.log('fetch response', r);
-    return r.json();
-  })
-  .then(data => {
-    console.log('data received', data);
+fetch(API_URL, {
+  method: 'GET',
+  cache: 'no-store'
+})
+.then(res => res.json())
+.then(data => {
+  renderGrid(data.rooms, data.bookings);
+})
+.catch(err => {
+  document.getElementById('app').innerHTML =
+    '<div style="padding:20px;color:red">FETCH ERROR</div>';
+  console.error(err);
+});
 
-    document.getElementById('app').innerHTML =
-      '<pre style="padding:16px">' +
-      JSON.stringify(data, null, 2) +
-      '</pre>';
-  })
-  .catch(err => {
-    console.error('FETCH ERROR', err);
-    document.getElementById('app').innerHTML =
-      '<div style="padding:20px;color:red">FETCH ERROR</div>';
+function renderGrid(rooms, bookings) {
+  const app = document.getElementById('app');
+  app.innerHTML = '';
+
+  /* Header（日期 X 轴） */
+  const header = document.createElement('div');
+  header.className = 'header';
+
+  const empty = document.createElement('div');
+  empty.className = 'room-col';
+  header.appendChild(empty);
+
+  days.forEach(d => {
+    const cell = document.createElement('div');
+    cell.className = 'cell';
+    cell.textContent = d.slice(5); // MM-DD
+    header.appendChild(cell);
   });
+
+  app.appendChild(header);
+
+  /* 房间 Y 轴 */
+  rooms.forEach(room => {
+    const row = document.createElement('div');
+    row.className = 'row';
+
+    const label = document.createElement('div');
+    label.className = 'room-col';
+    label.textContent = room;
+    row.appendChild(label);
+
+    days.forEach(day => {
+      const cell = document.createElement('div');
+
+      const booked = bookings.some(b =>
+        b.room === room &&
+        day >= b.checkIn &&
+        day < b.checkOut
+      );
+
+      cell.className = 'cell ' + (booked ? 'booked' : 'free');
+      row.appendChild(cell);
+    });
+
+    app.appendChild(row);
+  });
+}
 </script>
+
 
 </body>
 </html>
