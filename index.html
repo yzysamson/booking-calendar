@@ -19,10 +19,7 @@ body { margin:0; font-family:Arial,sans-serif; }
 
 .wrapper { overflow-x:auto; }
 
-.header, .row {
-  display:grid;
-  grid-auto-flow:column;
-}
+.header, .row { display:grid; grid-auto-flow:column; }
 
 .room-col {
   width:100px;
@@ -58,6 +55,23 @@ body { margin:0; font-family:Arial,sans-serif; }
 .free { background:#e8fbe8; }
 .booked { background:#f8b4b4; }
 .selected { outline:3px solid #4caf50; }
+
+/* modal */
+.modal {
+  display:none;
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.4);
+  z-index:99;
+}
+.modal-box {
+  background:#fff;
+  margin:20% auto;
+  padding:16px;
+  width:90%;
+  max-width:320px;
+  border-radius:8px;
+}
 </style>
 </head>
 
@@ -68,6 +82,20 @@ body { margin:0; font-family:Arial,sans-serif; }
 </div>
 
 <div class="wrapper" id="app"></div>
+
+<!-- ADD BOOKING MODAL -->
+<div id="bookingModal" class="modal">
+  <div class="modal-box">
+    <h3>New Booking</h3>
+    <div>
+      <input id="roomInput" readonly style="width:100%;margin-bottom:8px">
+      <input id="checkInInput" type="date" style="width:100%;margin-bottom:8px">
+      <input id="checkOutInput" type="date" style="width:100%;margin-bottom:8px">
+    </div>
+    <button onclick="saveBooking()">Save</button>
+    <button onclick="closeModal()">Cancel</button>
+  </div>
+</div>
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {
@@ -91,7 +119,6 @@ document.addEventListener('DOMContentLoaded', () => {
   CURRENT_MONTH = new Date().toISOString().slice(0,7);
   monthPicker.value = CURRENT_MONTH;
 
-  /* ===== FETCH DATA ===== */
   fetch(API_URL, { cache:'no-store' })
     .then(r => r.json())
     .then(data => {
@@ -102,7 +129,6 @@ document.addEventListener('DOMContentLoaded', () => {
       renderGrid();
     });
 
-  /* ===== MONTH CHANGE ===== */
   monthPicker.addEventListener('change', e => {
     CURRENT_MONTH = e.target.value;
     DAYS = buildMonthDays(CURRENT_MONTH);
@@ -110,11 +136,10 @@ document.addEventListener('DOMContentLoaded', () => {
     clearSelection();
   });
 
-  /* ===== DATE HELPERS (FIXED) ===== */
+  /* ===== DATE ===== */
   function buildMonthDays(month) {
     const [y, m] = month.split('-').map(Number);
     const daysInMonth = new Date(y, m, 0).getDate();
-
     const out = [];
     for (let d = 1; d <= daysInMonth; d++) {
       out.push(
@@ -199,14 +224,13 @@ document.addEventListener('DOMContentLoaded', () => {
         if (idx === 0) return;
         const day = DAYS[idx - 1];
         cell.dataset.date = day;
-
         const key = `${room}|${day}`;
         cell.className = 'cell ' + (BOOKED_MAP[key] ? 'booked' : 'free');
       });
     });
   }
 
-  /* ===== CLICK (EVENT DELEGATION) ===== */
+  /* ===== CLICK ===== */
   app.addEventListener('click', e => {
     const cell = e.target;
     if (!cell.classList.contains('cell')) return;
@@ -223,7 +247,7 @@ document.addEventListener('DOMContentLoaded', () => {
     clearSelection();
 
     if (isBooked) {
-      alert(`Booked\n${room}\n${day}`);
+      alert('Already booked');
       return;
     }
 
@@ -235,7 +259,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (day > SELECTED_START) {
-      alert(`New booking\n${room}\n${SELECTED_START} → ${day}`);
+      openModal(room, SELECTED_START, day);
+      clearSelection();
       SELECTED_ROOM = null;
       SELECTED_START = null;
     } else {
@@ -259,6 +284,53 @@ document.addEventListener('DOMContentLoaded', () => {
   function clearSelection() {
     document.querySelectorAll('.cell')
       .forEach(c => c.classList.remove('selected'));
+  }
+
+  /* ===== MODAL ===== */
+  window.openModal = function(room, checkIn, checkOut) {
+    bookingModal.style.display = 'block';
+    roomInput.value = room;
+    checkInInput.value = checkIn;
+    checkOutInput.value = checkOut;
+    checkOutInput.min = checkOut;
+  }
+
+  window.closeModal = function() {
+    bookingModal.style.display = 'none';
+  }
+
+  /* ===== SAVE BOOKING ===== */
+  window.saveBooking = function() {
+    const room = roomInput.value;
+    const checkIn = checkInInput.value;
+    const checkOut = checkOutInput.value;
+
+    if (checkOut <= checkIn) {
+      alert('Invalid date range');
+      return;
+    }
+
+    const conflict = CURRENT_BOOKINGS.some(b =>
+      b.room === room &&
+      checkIn < b.checkOut &&
+      checkOut > b.checkIn
+    );
+    if (conflict) {
+      alert('Date conflict');
+      return;
+    }
+
+    fetch(API_URL, {
+      method:'POST',
+      body:JSON.stringify({ room, checkIn, checkOut })
+    })
+    .then(r => r.json())
+    .then(() => {
+      CURRENT_BOOKINGS.push({ room, checkIn, checkOut });
+      BOOKED_MAP = buildBookedMap(CURRENT_BOOKINGS);
+      updateCells();
+      closeModal();
+    });
   }
 
 });
