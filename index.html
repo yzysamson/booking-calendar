@@ -220,15 +220,29 @@ body {
   color: #ffffff;
 }
 
-/* ===== FIX HEADER / ROOM OVERLAP ===== */
-.header {
-  height: var(--row-h);
-  top: 42px; /* 对齐 topbar 实际高度 */
+/* ===== FIX: HEADER 左上角不要 sticky ===== */
+
+/* Header 里的 room-col 取消 sticky */
+.header .room-col {
+  position: relative !important;
+  left: auto !important;
+  z-index: 1 !important;
+  background: #ffffff;
 }
 
-.header .cell {
+/* 真正的 Room 列（row 里的）保持 sticky */
+.row .room-col {
+  position: sticky;
+  left: 0;
+  z-index: 30;
+}
+
+/* Header 本身只负责横向，不和 row 抢纵向 */
+.header {
+  position: sticky;
+  top: 42px;   /* 对齐 topbar */
+  z-index: 10;
   height: var(--row-h);
-  line-height: var(--row-h);
 }
 
 </style>
