@@ -210,6 +210,75 @@ function updateCells() {
     });
   });
 }
+
+document.getElementById('app').addEventListener('click', e => {
+  const cell = e.target;
+
+  if (!cell.classList.contains('cell')) return;
+  if (!cell.dataset.room || !cell.dataset.date) return;
+
+  const room = cell.dataset.room;
+  const day = cell.dataset.date;
+  const isBooked = cell.classList.contains('booked');
+
+  handleCellClick(room, day, isBooked);
+});
+
+let SELECTED_ROOM = null;
+let SELECTED_START = null;
+
+function handleCellClick(room, day, isBooked) {
+  clearSelection();
+
+  // 点红色：查看 booking（如果你还没做 C，可先 alert）
+  if (isBooked) {
+    alert(`${room}\n${day} is booked`);
+    return;
+  }
+
+  // 第一次点
+  if (!SELECTED_START || SELECTED_ROOM !== room) {
+    SELECTED_ROOM = room;
+    SELECTED_START = day;
+    highlight(room, day, day);
+    return;
+  }
+
+  // 第二次点（同房，day > start）
+  if (day > SELECTED_START) {
+    // 你后面可以换成 openModal
+    alert(
+      `New booking\nRoom: ${room}\n${SELECTED_START} → ${day}`
+    );
+    SELECTED_ROOM = null;
+    SELECTED_START = null;
+  } else {
+    // 点到更早日期，重来
+    SELECTED_START = day;
+    highlight(room, day, day);
+  }
+}
+
+function highlight(room, start, end) {
+  document.querySelectorAll('.cell').forEach(c => {
+    c.classList.remove('selected');
+  });
+
+  document.querySelectorAll(
+    `.cell[data-room="${room}"]`
+  ).forEach(c => {
+    if (c.dataset.date >= start && c.dataset.date <= end) {
+      c.classList.add('selected');
+    }
+  });
+}
+
+function clearSelection() {
+  document.querySelectorAll('.cell').forEach(c => {
+    c.classList.remove('selected');
+  });
+}
+
 </script>
 
 </body>
