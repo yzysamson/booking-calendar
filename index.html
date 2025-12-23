@@ -81,19 +81,14 @@ body {
 /* ===== HEADER ROW ===== */
 .header {
   position: sticky;
-  top: 42px;
   z-index: 10;
   background: #ffffff;
-  height: var(--row-h);
-  
 }
 
 .header .cell {
   font-size: 11px;
   font-weight: 500;
   color: var(--muted);
-  height: var(--row-h);
-  line-height: var(--row-h);
   background: #ffffff;
 }
 
@@ -224,6 +219,18 @@ body {
   background: #ff3b30;
   color: #ffffff;
 }
+
+/* ===== FIX HEADER / ROOM OVERLAP ===== */
+.header {
+  height: var(--row-h);
+  top: 42px; /* 对齐 topbar 实际高度 */
+}
+
+.header .cell {
+  height: var(--row-h);
+  line-height: var(--row-h);
+}
+
 </style>
 </head>
 
