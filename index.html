@@ -112,28 +112,42 @@ body {
   background: #fafafa;
 }
 
-/* ===== FIX HEADER OVERLAP (SAFE VERSION) ===== */
-
-/* Header 只负责纵向，不参与横向叠层 */
-.header {
-  position: sticky;
-  top: 48px;        /* 顶在 topbar 下 */
-  z-index: 2;       /* 比 room-col 低 */
-  background: #fff;
-}
-
-/* Header 里的 room 占位格，不参与 sticky */
-.header .room-col {
-  position: relative;
-  left: auto;
-  z-index: 1;
-}
-
-/* 真正的 Room 列，永远在最上层 */
-.row .room-col {
-  position: sticky;
+/* ===== FIXED HEADER (SAFE, NO STICKY) ===== */
+#fixedHeader {
+  position: fixed;
+  top: 48px;              /* 在 topbar 下方 */
   left: 0;
-  z-index: 5;
+  right: 0;
+  background: #ffffff;
+  z-index: 10;
+  overflow: hidden;
+  pointer-events: none;   /* 不挡点击 */
+  display: none;
+}
+
+/* fixed header 内部的 grid */
+#fixedHeader .header {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: min-content;
+}
+
+/* fixed header 的 cell */
+#fixedHeader .cell {
+  width: 56px;
+  height: 32px;
+  line-height: 32px;
+  border: 1px solid #ddd;
+  box-sizing: border-box;
+  text-align: center;
+  font-size: 12px;
+  background: #ffffff;
+}
+
+/* 左上角占位 */
+#fixedHeader .room-col {
+  width: 90px;
+  min-width: 90px;
   background: #fafafa;
 }
 
@@ -145,6 +159,8 @@ body {
 <div class="topbar">
   <input type="month" id="monthPicker">
 </div>
+
+<div id="fixedHeader"></div>
 
 <div class="wrapper" id="app"></div>
 
