@@ -411,6 +411,32 @@ deleteBtn.onclick = () => {
     })
   }).then(load);
 };
+
+// ===== FIXED HEADER SYNC =====
+const fixedHeader = document.getElementById('fixedHeader');
+
+// 在 render() 之后调用
+function updateFixedHeader() {
+  const header = document.querySelector('.header');
+  if (!header) return;
+
+  fixedHeader.innerHTML = '';
+  fixedHeader.appendChild(header.cloneNode(true));
+  fixedHeader.style.display = 'block';
+}
+
+// 改写 render：渲染完再生成 fixed header
+const _render = render;
+render = function () {
+  _render();
+  updateFixedHeader();
+};
+
+// 横向滚动时同步 fixed header
+document.getElementById('app').addEventListener('scroll', (e) => {
+  fixedHeader.scrollLeft = e.target.scrollLeft;
+});
+
 </script>
 
 </body>
