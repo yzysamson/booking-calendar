@@ -135,16 +135,12 @@ body {
 </div>
 
 <script>
-/* =========================
-   CONFIG
-   ========================= */
+const API_URL = 'https://script.google.com/macros/s/AKfycbxdl0gBcDgUcH8wtw1DUEb9RLHh3RHgXs9u3Gp6r-7V-pnrtFZXht7V9GydnQO8I0ja/exec';
 
-const API_URL = 'PASTE_YOUR_APPS_SCRIPT_URL_HERE';
+const app = document.getElementById('app');
+const monthPicker = document.getElementById('monthPicker');
 
-/* =========================
-   STATE
-   ========================= */
-
+/* ===== STATE ===== */
 let ROOMS = [];
 let BOOKINGS = [];
 let BOOKED_MAP = {};
@@ -154,23 +150,18 @@ let SELECT_ROOM = null;
 let SELECT_START = null;
 let EDIT_BOOKING = null;
 
-/* =========================
-   INIT
-   ========================= */
-
-const app = document.getElementById('app');
-const monthPicker = document.getElementById('monthPicker');
-
+/* ===== INIT ===== */
 monthPicker.value = new Date().toISOString().slice(0,7);
-monthPicker.onchange = () => load();
+monthPicker.addEventListener('change', load);
 
 load();
 
-/* =========================
-   LOAD DATA
-   ========================= */
-
+/* ===== LOAD DATA ===== */
 function load() {
+  closeModal();              // ✅ 防止自动弹窗
+  clearSelection();          // ✅ 防止残留选择
+  app.innerHTML = '';        // ✅ 确保只有一个 grid
+
   fetch(API_URL)
     .then(r => r.json())
     .then(data => {
@@ -178,10 +169,11 @@ function load() {
       BOOKINGS = data.bookings;
       BOOKED_MAP = buildBookedMap(BOOKINGS);
       DAYS = buildDays(monthPicker.value);
-      render();
+      render();              // ✅ render 只在这里
     });
 }
 
+/* ===== UTIL ===== */
 function buildDays(month) {
   const [y,m] = month.split('-').map(Number);
   const total = new Date(y, m, 0).getDate();
@@ -203,17 +195,15 @@ function buildBookedMap(bookings) {
   return map;
 }
 
-/* =========================
-   RENDER
-   ========================= */
-
+/* ===== RENDER (只一次) ===== */
 function render() {
-  app.innerHTML = '';
-
   // Header
   const header = document.createElement('div');
   header.className = 'header';
-  header.appendChild(document.createElement('div')).className = 'room-col';
+
+  const corner = document.createElement('div');
+  corner.className = 'room-col';
+  header.appendChild(corner);
 
   DAYS.forEach(d => {
     const c = document.createElement('div');
@@ -221,6 +211,7 @@ function render() {
     c.textContent = d.slice(8);
     header.appendChild(c);
   });
+
   app.appendChild(header);
 
   // Rows
@@ -235,8 +226,10 @@ function render() {
 
     DAYS.forEach(day => {
       const c = document.createElement('div');
-      c.className = 'cell ' + (BOOKED_MAP[`${room}|${day}`] ? 'booked' : 'free');
-      c.onclick = () => cellClick(room, day);
+      c.className = 'cell ' +
+        (BOOKED_MAP[`${room}|${day}`] ? 'booked' : 'free');
+
+      c.addEventListener('click', () => onCellClick(room, day));
       row.appendChild(c);
     });
 
@@ -244,11 +237,8 @@ function render() {
   });
 }
 
-/* =========================
-   INTERACTION
-   ========================= */
-
-function cellClick(room, day) {
+/* ===== CLICK ===== */
+function onCellClick(room, day) {
   const booking = BOOKED_MAP[`${room}|${day}`];
 
   if (booking) {
@@ -273,10 +263,13 @@ function cellClick(room, day) {
   }
 }
 
+/* ===== SELECTION ===== */
 function highlight(room, start, end) {
-  document.querySelectorAll('.cell').forEach(c => c.classList.remove('selected'));
-  const rows = document.querySelectorAll('.row');
-  rows.forEach(r => {
+  document.querySelectorAll('.cell').forEach(c =>
+    c.classList.remove('selected')
+  );
+
+  document.querySelectorAll('.row').forEach(r => {
     if (r.firstChild.textContent !== room) return;
     const cells = r.querySelectorAll('.cell');
     cells.forEach((c,i)=>{
@@ -289,13 +282,12 @@ function highlight(room, start, end) {
 function clearSelection() {
   SELECT_ROOM = null;
   SELECT_START = null;
-  document.querySelectorAll('.cell').forEach(c => c.classList.remove('selected'));
+  document.querySelectorAll('.cell').forEach(c =>
+    c.classList.remove('selected')
+  );
 }
 
-/* =========================
-   MODAL
-   ========================= */
-
+/* ===== MODAL ===== */
 const modal = document.getElementById('modal');
 const roomInput = document.getElementById('roomInput');
 const checkInInput = document.getElementById('checkInInput');
@@ -337,12 +329,10 @@ function fillRooms(selected) {
 
 function closeModal() {
   modal.style.display = 'none';
+  EDIT_BOOKING = null;
 }
 
-/* =========================
-   SAVE / DELETE
-   ========================= */
-
+/* ===== SAVE / DELETE ===== */
 saveBtn.onclick = () => {
   const payload = EDIT_BOOKING ? {
     action: 'update',
@@ -357,15 +347,20 @@ saveBtn.onclick = () => {
     checkOut: checkOutInput.value
   };
 
-  fetch(API_URL, { method:'POST', body: JSON.stringify(payload) })
-    .then(()=>{ closeModal(); load(); });
+  fetch(API_URL, {
+    method:'POST',
+    body: JSON.stringify(payload)
+  }).then(load);
 };
 
 deleteBtn.onclick = () => {
   fetch(API_URL, {
     method:'POST',
-    body: JSON.stringify({ action:'delete', booking: EDIT_BOOKING })
-  }).then(()=>{ closeModal(); load(); });
+    body: JSON.stringify({
+      action:'delete',
+      booking: EDIT_BOOKING
+    })
+  }).then(load);
 };
 </script>
 
