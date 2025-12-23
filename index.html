@@ -1,8 +1,9 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Booking Grid</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Booking Calendar</title>
 
 <style>
 body {
@@ -10,22 +11,26 @@ body {
   font-family: Arial, sans-serif;
 }
 
-.header {
+.wrapper {
+  overflow-x: auto;
+}
+
+.header, .row {
   display: grid;
   grid-auto-flow: column;
-  position: sticky;
-  top: 0;
-  background: #fff;
-  z-index: 10;
 }
 
 .room-col {
-  width: 80px;
-  min-width: 80px;
+  width: 90px;
+  min-width: 90px;
   background: #f5f5f5;
   border-right: 1px solid #ccc;
-  text-align: center;
   font-weight: bold;
+  text-align: center;
+  line-height: 44px;
+  position: sticky;
+  left: 0;
+  z-index: 2;
 }
 
 .cell {
@@ -35,25 +40,20 @@ body {
   text-align: center;
   line-height: 44px;
   font-size: 12px;
+  touch-action: manipulation;
 }
 
-.row {
-  display: grid;
-  grid-auto-flow: column;
-}
+.free { background: #e8fbe8; }
+.booked { background: #f8b4b4; }
+.selected { outline: 3px solid #4caf50; }
 
-.booked {
-  background: #f8b4b4;
+.header .cell {
+  font-weight: bold;
+  background: #fff;
+  position: sticky;
+  top: 0;
+  z-index: 3;
 }
-
-.free {
-  background: #e8fbe8;
-}
-
-.wrapper {
-  overflow-x: auto;
-}
-
 </style>
 </head>
 
@@ -61,53 +61,71 @@ body {
 
 <div class="wrapper" id="app"></div>
 
-<script>
-let CURRENT_BOOKINGS = [];
+<!-- ADD BOOKING MODAL -->
+<div id="modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:99">
+  <div style="background:#fff;margin:20% auto;padding:20px;width:90%;max-width:320px;border-radius:8px">
+    <h3>New Booking</h3>
+    <input id="roomInput" readonly style="width:100%;margin-bottom:8px">
+    <input id="checkInInput" type="date" style="width:100%;margin-bottom:8px">
+    <input id="checkOutInput" type="date" style="width:100%;margin-bottom:8px">
+    <button onclick="saveBooking()">Save</button>
+    <button onclick="closeModal()">Cancel</button>
+  </div>
+</div>
 
+<!-- VIEW BOOKING MODAL -->
+<div id="viewModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:99">
+  <div style="background:#fff;margin:20% auto;padding:20px;width:90%;max-width:320px;border-radius:8px">
+    <h3>Booking</h3>
+    <div id="viewInfo"></div><br>
+    <button onclick="deleteBooking()">Delete</button>
+    <button onclick="closeView()">Close</button>
+  </div>
+</div>
+
+<script>
+/* ===== CONFIG ===== */
 const API_URL = 'https://script.google.com/macros/s/AKfycbx0LAjaP3gb052UrXKOiqxbcquTX84F43JW4hLFOii9YSNefko0ENdRl6baTn7LW-VeBA/exec';
 
-/* 未来 14 天 */
+/* ===== STATE ===== */
+let CURRENT_BOOKINGS = [];
+let SELECTED_ROOM = null;
+let SELECTED_START = null;
+let CURRENT_VIEW = null;
+
+/* ===== DAYS ===== */
 const today = new Date();
-const days = Array.from({ length: 14 }, (_, i) => {
+const DAYS = Array.from({length: 14}, (_, i) => {
   const d = new Date(today);
   d.setDate(today.getDate() + i);
-  return d.toISOString().slice(0, 10); // yyyy-mm-dd
+  return d.toISOString().slice(0,10);
 });
 
+/* ===== LOAD DATA ===== */
 fetch(API_URL, { cache: 'no-store' })
-  .then(res => res.json())
+  .then(r => r.json())
   .then(data => {
-    CURRENT_BOOKINGS = data.bookings; 
-    drawGrid(data.rooms, data.bookings);
-  })
-  .catch(err => {
-    console.error(err);
-    document.getElementById('app').innerHTML =
-      '<div style="color:red;padding:20px">FETCH ERROR</div>';
+    CURRENT_BOOKINGS = data.bookings;
+    render(data.rooms, data.bookings);
   });
 
-function drawGrid(rooms, bookings) {
+/* ===== RENDER GRID ===== */
+function render(rooms, bookings) {
   const app = document.getElementById('app');
   app.innerHTML = '';
 
-  /* ===== Header ===== */
   const header = document.createElement('div');
   header.className = 'header';
+  header.appendChild(document.createElement('div')).className = 'room-col';
 
-  const blank = document.createElement('div');
-  blank.className = 'room-col';
-  header.appendChild(blank);
-
-  days.forEach(d => {
+  DAYS.forEach(d => {
     const c = document.createElement('div');
     c.className = 'cell';
-    c.textContent = d.slice(5); // MM-DD
+    c.textContent = d.slice(5);
     header.appendChild(c);
   });
-
   app.appendChild(header);
 
-  /* ===== Rows ===== */
   rooms.forEach(room => {
     const row = document.createElement('div');
     row.className = 'row';
@@ -117,149 +135,123 @@ function drawGrid(rooms, bookings) {
     label.textContent = room;
     row.appendChild(label);
 
-    
-    days.forEach(day => {
-  const cell = document.createElement('div');
+    DAYS.forEach(day => {
+      const cell = document.createElement('div');
+      const isBooked = bookings.some(b =>
+        b.room === room && day >= b.checkIn && day < b.checkOut
+      );
 
-  const isBooked = bookings.some(b =>
-    b.room === room &&
-    day >= b.checkIn &&
-    day < b.checkOut
-  );
+      cell.className = 'cell ' + (isBooked ? 'booked' : 'free');
+      cell.dataset.room = room;
+      cell.dataset.date = day;
 
-  cell.className = 'cell ' + (isBooked ? 'booked' : 'free');
-
-  // 👇 新增：点击事件
-  cell.onclick = () => {
-    openModal(room, day);
-  };
-
-  row.appendChild(cell);
-});
+      cell.onclick = () => handleCellClick(room, day, isBooked);
+      row.appendChild(cell);
+    });
 
     app.appendChild(row);
   });
 }
 
-function openModal(room, date) {
-  document.getElementById('modal').style.display = 'block';
-  document.getElementById('roomInput').value = room;
+/* ===== CLICK LOGIC ===== */
+function handleCellClick(room, day, isBooked) {
+  clearSelection();
 
-  const checkInInput = document.getElementById('checkInInput');
-  const checkOutInput = document.getElementById('checkOutInput');
+  if (isBooked) {
+    CURRENT_VIEW = CURRENT_BOOKINGS.find(b =>
+      b.room === room && day >= b.checkIn && day < b.checkOut
+    );
+    openView();
+    return;
+  }
 
-  // 设置 check-in
-  checkInInput.value = date;
+  if (!SELECTED_START || SELECTED_ROOM !== room) {
+    SELECTED_ROOM = room;
+    SELECTED_START = day;
+    highlight(room, day, day);
+    return;
+  }
 
-  // checkout 最小 = checkin + 1
-  const d = new Date(date);
-  d.setDate(d.getDate() + 1);
-  const minCheckout = d.toISOString().slice(0,10);
-
-  checkOutInput.value = minCheckout;
-  checkOutInput.min = minCheckout;   // 👈 关键
+  if (day > SELECTED_START) {
+    openModal(room, SELECTED_START, day);
+  } else {
+    SELECTED_START = day;
+    highlight(room, day, day);
+  }
 }
 
+/* ===== HIGHLIGHT ===== */
+function highlight(room, start, end) {
+  document.querySelectorAll('.cell').forEach(c => c.classList.remove('selected'));
+  document.querySelectorAll(`[data-room="${room}"]`).forEach(c => {
+    if (c.dataset.date >= start && c.dataset.date <= end) {
+      c.classList.add('selected');
+    }
+  });
+}
+
+function clearSelection() {
+  document.querySelectorAll('.cell').forEach(c => c.classList.remove('selected'));
+}
+
+/* ===== ADD BOOKING ===== */
+function openModal(room, checkIn, checkOut) {
+  document.getElementById('modal').style.display = 'block';
+  roomInput.value = room;
+  checkInInput.value = checkIn;
+  checkOutInput.value = checkOut;
+  checkOutInput.min = checkOut;
+}
 
 function closeModal() {
   document.getElementById('modal').style.display = 'none';
+  SELECTED_ROOM = SELECTED_START = null;
 }
 
 function saveBooking() {
-  const checkIn = document.getElementById('checkInInput').value;
-  const checkOut = document.getElementById('checkOutInput').value;
+  const room = roomInput.value;
+  const checkIn = checkInInput.value;
+  const checkOut = checkOutInput.value;
 
   if (checkOut <= checkIn) {
-    alert('Check-out must be after Check-in');
+    alert('Invalid date range');
     return;
   }
 
   const conflict = CURRENT_BOOKINGS.some(b =>
-    b.room === room &&
-    checkIn < b.checkOut &&
-    checkOut > b.checkIn
+    b.room === room && checkIn < b.checkOut && checkOut > b.checkIn
   );
-
   if (conflict) {
-    alert('This date range is already booked.');
+    alert('Date conflict');
     return;
   }
 
-  // 没冲突，才写入
   fetch(API_URL, {
     method: 'POST',
     body: JSON.stringify({ room, checkIn, checkOut })
-  })
-  .then(r => r.json())
-  .then(() => {
-    alert('Saved!');
-    closeModal();
-    location.reload();
-  })
-  .catch(err => {
-    alert('Save failed');
-    console.error(err);
-  });
+  }).then(() => location.reload());
 }
 
-  const payload = {
-    room: document.getElementById('roomInput').value,
-    checkIn,
-    checkOut
-  };
+/* ===== VIEW / DELETE ===== */
+function openView() {
+  viewInfo.innerHTML = `
+    ${CURRENT_VIEW.room}<br>
+    ${CURRENT_VIEW.checkIn} → ${CURRENT_VIEW.checkOut}
+  `;
+  viewModal.style.display = 'block';
+}
 
-  // 原本的 fetch 逻辑继续
+function closeView() {
+  viewModal.style.display = 'none';
+}
+
+function deleteBooking() {
   fetch(API_URL, {
     method: 'POST',
-    body: JSON.stringify(payload)
-  })
-  .then(r => r.json())
-  .then(() => {
-    alert('Saved!');
-    closeModal();
-    location.reload();
-  })
-  .catch(err => {
-    alert('Save failed');
-    console.error(err);
-  });
+    body: JSON.stringify({ _method:'DELETE', ...CURRENT_VIEW })
+  }).then(() => location.reload());
 }
-
-
 </script>
-
-<!-- Booking Modal -->
-<div id="modal" style="
-  display:none;
-  position:fixed;
-  top:0;left:0;right:0;bottom:0;
-  background:rgba(0,0,0,0.4);
-  z-index:999;
-">
-  <div style="
-    background:#fff;
-    margin:15% auto;
-    padding:20px;
-    width:90%;
-    max-width:320px;
-    border-radius:8px;
-  ">
-    <h3 id="modal-title">New Booking</h3>
-
-    <label>Room</label>
-    <input id="roomInput" readonly style="width:100%"><br><br>
-
-    <label>Check-in</label>
-    <input id="checkInInput" type="date" style="width:100%"><br><br>
-
-    <label>Check-out</label>
-    <input id="checkOutInput" type="date" style="width:100%"><br><br>
-
-    <button onclick="saveBooking()">Save</button>
-    <button onclick="closeModal()">Cancel</button>
-  </div>
-</div>
-
 
 </body>
 </html>
