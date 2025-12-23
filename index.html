@@ -13,9 +13,8 @@
 
   --border: #e5e5ea;
 
-  --free: #F4FBF6;
-  --booked: #F24E7C;
-  --bg: #FFF8EB;
+  --free: #FFF8EB;      /* 👈 没被 book 的格子 */
+  --booked: #F24E7C;    /* 👈 已 book 的深色 */
 
   --accent: #34C759;
 
@@ -29,7 +28,7 @@
 
 body {
   margin: 0;
-  background: var(--bg);
+  background: #ffffff;   /* 👈 页面背景回白 */
   font-family: -apple-system, BlinkMacSystemFont,
     "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
   color: var(--text);
@@ -38,7 +37,7 @@ body {
 /* ===== TOP BAR ===== */
 .topbar {
   padding: 6px 10px;
-  background: #fff;
+  background: #ffffff;
   position: sticky;
   top: 0;
   z-index: 20;
@@ -52,7 +51,7 @@ body {
   -webkit-overflow-scrolling: touch;
 }
 
-/* ===== GRID CORE (不能动) ===== */
+/* ===== GRID CORE（不能动） ===== */
 .header,
 .row {
   display: grid;
@@ -84,14 +83,14 @@ body {
   position: sticky;
   top: 36px;
   z-index: 10;
-  background: #fff;
+  background: #ffffff;
 }
 
 .header .cell {
   font-size: 11px;
   font-weight: 500;
   color: var(--muted);
-  background: #fff;
+  background: #ffffff;
 }
 
 /* ===== CELL ===== */
@@ -111,15 +110,15 @@ body {
   z-index: 1;
 }
 
-/* ===== FREE ===== */
+/* ===== FREE (未被 booking) ===== */
 .free {
   background: var(--free);
 }
 
-/* ===== BOOKED (BASE) ===== */
+/* ===== BOOKED (基础) ===== */
 .booked {
   background: var(--booked);
-  color: #fff;
+  color: #ffffff;
   border-color: var(--booked);
   border-radius: 0;
 }
@@ -139,7 +138,7 @@ body {
   border-radius: 999px;
 }
 
-/* 让连续 booking 看起来是一条 */
+/* 让连续 booking 连成一条 */
 .booked:not(.start) {
   border-left-color: transparent;
 }
@@ -148,17 +147,17 @@ body {
   border-right-color: transparent;
 }
 
-/* ===== SELECTED (新建时高亮) ===== */
+/* ===== SELECTED（新建 booking 时） ===== */
 .selected {
   outline: 2px solid var(--accent);
   outline-offset: -2px;
   border-radius: 6px;
 }
 
-/* ===== DESKTOP HOVER（安全，不影响手机） ===== */
+/* ===== DESKTOP HOVER（安全） ===== */
 @media (hover: hover) {
   .cell.free:hover {
-    background: #eaf7ef;
+    background: #fff2d6;
   }
 }
 
@@ -172,7 +171,7 @@ body {
 }
 
 .modal-box {
-  background: #fff;
+  background: #ffffff;
   margin: 22% auto;
   padding: 14px;
   width: 90%;
@@ -210,7 +209,7 @@ body {
 
 .primary {
   background: var(--accent);
-  color: #fff;
+  color: #ffffff;
 }
 
 .secondary {
@@ -219,7 +218,7 @@ body {
 
 .danger {
   background: #ff3b30;
-  color: #fff;
+  color: #ffffff;
 }
 </style>
 </head>
