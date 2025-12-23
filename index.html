@@ -142,14 +142,22 @@ function drawGrid(rooms, bookings) {
 function openModal(room, date) {
   document.getElementById('modal').style.display = 'block';
   document.getElementById('roomInput').value = room;
-  document.getElementById('checkInInput').value = date;
 
-  // 默认 checkout = next day
+  const checkInInput = document.getElementById('checkInInput');
+  const checkOutInput = document.getElementById('checkOutInput');
+
+  // 设置 check-in
+  checkInInput.value = date;
+
+  // checkout 最小 = checkin + 1
   const d = new Date(date);
   d.setDate(d.getDate() + 1);
-  document.getElementById('checkOutInput').value =
-    d.toISOString().slice(0,10);
+  const minCheckout = d.toISOString().slice(0,10);
+
+  checkOutInput.value = minCheckout;
+  checkOutInput.min = minCheckout;   // 👈 关键
 }
+
 
 function closeModal() {
   document.getElementById('modal').style.display = 'none';
