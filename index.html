@@ -112,49 +112,6 @@ body {
   background: #fafafa;
 }
 
-/* ===== FIXED HEADER (SAFE, NO STICKY) ===== */
-#fixedHeader {
-  position: fixed;
-  top: 48px;              /* 在 topbar 下方 */
-  left: 0;
-  right: 0;
-  background: #ffffff;
-  z-index: 10;
-  overflow: hidden;
-  pointer-events: none;   /* 不挡点击 */
-  display: none;
-}
-
-/* fixed header 内部的 grid */
-#fixedHeader .header {
-  display: grid;
-  grid-auto-flow: column;
-  grid-auto-columns: min-content;
-}
-
-/* fixed header 的 cell */
-#fixedHeader .cell {
-  width: 56px;
-  height: 32px;
-  line-height: 32px;
-  border: 1px solid #ddd;
-  box-sizing: border-box;
-  text-align: center;
-  font-size: 12px;
-  background: #ffffff;
-}
-
-/* 左上角占位 */
-#fixedHeader .room-col {
-  width: 90px;
-  min-width: 90px;
-  background: #fafafa;
-}
-/* 原 header 隐藏用 */
-.header.hidden {
-  visibility: hidden;   /* 占位但不显示 */
-}
-
 </style>
 </head>
 
@@ -163,8 +120,6 @@ body {
 <div class="topbar">
   <input type="month" id="monthPicker">
 </div>
-
-<div id="fixedHeader"></div>
 
 <div class="wrapper" id="app"></div>
 
@@ -415,46 +370,6 @@ deleteBtn.onclick = () => {
     })
   }).then(load);
 };
-
-// ===== FIXED HEADER SYNC =====
-const fixedHeader = document.getElementById('fixedHeader');
-
-function updateFixedHeader() {
-  const header = document.querySelector('.header');
-  if (!header) return;
-
-  // clone 到 fixedHeader
-  fixedHeader.innerHTML = '';
-  fixedHeader.appendChild(header.cloneNode(true));
-  fixedHeader.style.display = 'block';
-
-  // ⭐ 隐藏原本的 header（防重影）
-  header.classList.add('hidden');
-}
-
-
-// 改写 render：渲染完再生成 fixed header
-const _render = render;
-render = function () {
-  _render();
-  updateFixedHeader();
-};
-
-// 横向滚动时同步 fixed header
-document.getElementById('app').addEventListener('scroll', (e) => {
-  fixedHeader.scrollLeft = e.target.scrollLeft;
-});
-
-document.addEventListener('scroll', () => {
-  const header = document.querySelector('.header');
-  if (!header) return;
-
-  if (window.scrollY < 40) {
-    // 回到顶部：显示原 header，隐藏 fixedHeader
-    header.classList.remove('hidden');
-    fixedHeader.style.display = 'none';
-  }
-});
 
 </script>
 
