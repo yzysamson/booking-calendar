@@ -164,12 +164,21 @@ function closeModal() {
 }
 
 function saveBooking() {
+  const checkIn = document.getElementById('checkInInput').value;
+  const checkOut = document.getElementById('checkOutInput').value;
+
+  if (checkOut <= checkIn) {
+    alert('Check-out must be after Check-in');
+    return;
+  }
+
   const payload = {
     room: document.getElementById('roomInput').value,
-    checkIn: document.getElementById('checkInInput').value,
-    checkOut: document.getElementById('checkOutInput').value
+    checkIn,
+    checkOut
   };
 
+  // 原本的 fetch 逻辑继续
   fetch(API_URL, {
     method: 'POST',
     body: JSON.stringify(payload)
@@ -178,13 +187,14 @@ function saveBooking() {
   .then(() => {
     alert('Saved!');
     closeModal();
-    location.reload(); // 简单粗暴刷新
+    location.reload();
   })
   .catch(err => {
     alert('Save failed');
     console.error(err);
   });
 }
+
 
 </script>
 
