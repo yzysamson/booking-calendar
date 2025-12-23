@@ -155,6 +155,29 @@ function closeModal() {
   document.getElementById('modal').style.display = 'none';
 }
 
+function saveBooking() {
+  const payload = {
+    room: document.getElementById('roomInput').value,
+    checkIn: document.getElementById('checkInInput').value,
+    checkOut: document.getElementById('checkOutInput').value
+  };
+
+  fetch(API_URL, {
+    method: 'POST',
+    body: JSON.stringify(payload)
+  })
+  .then(r => r.json())
+  .then(() => {
+    alert('Saved!');
+    closeModal();
+    location.reload(); // 简单粗暴刷新
+  })
+  .catch(err => {
+    alert('Save failed');
+    console.error(err);
+  });
+}
+
 </script>
 
 <!-- Booking Modal -->
