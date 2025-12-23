@@ -112,12 +112,29 @@ body {
   background: #fafafa;
 }
 
-/* ===== STEP 2: Sticky Date Header ===== */
+/* ===== FIX HEADER OVERLAP (SAFE VERSION) ===== */
+
+/* Header 只负责纵向，不参与横向叠层 */
 .header {
   position: sticky;
-  top: 48px;           /* 对齐 topbar 高度 */
-  z-index: 4;
-  background: #ffffff;
+  top: 48px;        /* 顶在 topbar 下 */
+  z-index: 2;       /* 比 room-col 低 */
+  background: #fff;
+}
+
+/* Header 里的 room 占位格，不参与 sticky */
+.header .room-col {
+  position: relative;
+  left: auto;
+  z-index: 1;
+}
+
+/* 真正的 Room 列，永远在最上层 */
+.row .room-col {
+  position: sticky;
+  left: 0;
+  z-index: 5;
+  background: #fafafa;
 }
 
 </style>
