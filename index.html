@@ -11,6 +11,15 @@ body {
   font-family: Arial, sans-serif;
 }
 
+.topbar {
+  padding: 8px;
+  background: #fff;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  border-bottom: 1px solid #ddd;
+}
+
 .wrapper {
   overflow-x: auto;
 }
@@ -21,8 +30,8 @@ body {
 }
 
 .room-col {
-  width: 90px;
-  min-width: 90px;
+  width: 100px;
+  min-width: 100px;
   background: #f5f5f5;
   border-right: 1px solid #ccc;
   font-weight: bold;
@@ -34,7 +43,7 @@ body {
 }
 
 .cell {
-  width: 80px;
+  width: 72px;
   height: 44px;
   border: 1px solid #eee;
   text-align: center;
@@ -43,90 +52,101 @@ body {
   touch-action: manipulation;
 }
 
-.free { background: #e8fbe8; }
-.booked { background: #f8b4b4; }
-.selected { outline: 3px solid #4caf50; }
-
 .header .cell {
   font-weight: bold;
   background: #fff;
   position: sticky;
-  top: 0;
+  top: 40px;
   z-index: 3;
 }
+
+.free { background: #e8fbe8; }
+.booked { background: #f8b4b4; }
 </style>
 </head>
 
 <body>
 
+<div class="topbar">
+  <input id="monthPicker" type="month">
+</div>
+
 <div class="wrapper" id="app"></div>
-
-<!-- ADD BOOKING MODAL -->
-<div id="modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:99">
-  <div style="background:#fff;margin:20% auto;padding:20px;width:90%;max-width:320px;border-radius:8px">
-    <h3>New Booking</h3>
-    <input id="roomInput" readonly style="width:100%;margin-bottom:8px">
-    <input id="checkInInput" type="date" style="width:100%;margin-bottom:8px">
-    <input id="checkOutInput" type="date" style="width:100%;margin-bottom:8px">
-    <button onclick="saveBooking()">Save</button>
-    <button onclick="closeModal()">Cancel</button>
-  </div>
-</div>
-
-<!-- VIEW BOOKING MODAL -->
-<div id="viewModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:99">
-  <div style="background:#fff;margin:20% auto;padding:20px;width:90%;max-width:320px;border-radius:8px">
-    <h3>Booking</h3>
-    <div id="viewInfo"></div><br>
-    <button onclick="deleteBooking()">Delete</button>
-    <button onclick="closeView()">Close</button>
-  </div>
-</div>
 
 <script>
 /* ===== CONFIG ===== */
 const API_URL = 'https://script.google.com/macros/s/AKfycbx0LAjaP3gb052UrXKOiqxbcquTX84F43JW4hLFOii9YSNefko0ENdRl6baTn7LW-VeBA/exec';
 
 /* ===== STATE ===== */
+let ROOMS = [];
 let CURRENT_BOOKINGS = [];
-let SELECTED_ROOM = null;
-let SELECTED_START = null;
-let CURRENT_VIEW = null;
+let BOOKED_MAP = {};
+let DAYS = [];
+let CURRENT_MONTH = '';
 
-/* ===== DAYS ===== */
-const today = new Date();
-const DAYS = Array.from({length: 14}, (_, i) => {
-  const d = new Date(today);
-  d.setDate(today.getDate() + i);
-  return d.toISOString().slice(0,10);
-});
+/* ===== INIT ===== */
+const monthPicker = document.getElementById('monthPicker');
+CURRENT_MONTH = new Date().toISOString().slice(0,7);
+monthPicker.value = CURRENT_MONTH;
 
-/* ===== LOAD DATA ===== */
+/* ===== FETCH DATA ===== */
 fetch(API_URL, { cache: 'no-store' })
   .then(r => r.json())
   .then(data => {
+    ROOMS = data.rooms;
     CURRENT_BOOKINGS = data.bookings;
-    render(data.rooms, data.bookings);
+    BOOKED_MAP = buildBookedMap(data.bookings);
+    DAYS = buildMonthDays(CURRENT_MONTH);
+    renderGrid();
   });
 
-/* ===== RENDER GRID ===== */
-function render(rooms, bookings) {
+/* ===== MONTH CHANGE ===== */
+monthPicker.addEventListener('change', e => {
+  CURRENT_MONTH = e.target.value;
+  DAYS = buildMonthDays(CURRENT_MONTH);
+  updateMonthView();
+});
+
+/* ===== DATE HELPERS ===== */
+function buildMonthDays(month) {
+  const [y, m] = month.split('-').map(Number);
+  const d = new Date(y, m - 1, 1);
+  const out = [];
+
+  while (d.getMonth() === m - 1) {
+    out.push(d.toISOString().slice(0,10));
+    d.setDate(d.getDate() + 1);
+  }
+  return out;
+}
+
+/* ===== BOOKED MAP ===== */
+function buildBookedMap(bookings) {
+  const map = {};
+  bookings.forEach(b => {
+    let d = new Date(b.checkIn);
+    const end = new Date(b.checkOut);
+
+    while (d < end) {
+      const day = d.toISOString().slice(0,10);
+      map[`${b.room}|${day}`] = true;
+      d.setDate(d.getDate() + 1);
+    }
+  });
+  return map;
+}
+
+/* ===== RENDER GRID (ONCE) ===== */
+function renderGrid() {
   const app = document.getElementById('app');
   app.innerHTML = '';
 
   const header = document.createElement('div');
   header.className = 'header';
   header.appendChild(document.createElement('div')).className = 'room-col';
-
-  DAYS.forEach(d => {
-    const c = document.createElement('div');
-    c.className = 'cell';
-    c.textContent = d.slice(5);
-    header.appendChild(c);
-  });
   app.appendChild(header);
 
-  rooms.forEach(room => {
+  ROOMS.forEach(room => {
     const row = document.createElement('div');
     row.className = 'row';
 
@@ -137,119 +157,58 @@ function render(rooms, bookings) {
 
     DAYS.forEach(day => {
       const cell = document.createElement('div');
-      const isBooked = bookings.some(b =>
-        b.room === room && day >= b.checkIn && day < b.checkOut
-      );
-
-      cell.className = 'cell ' + (isBooked ? 'booked' : 'free');
+      cell.className = 'cell';
       cell.dataset.room = room;
       cell.dataset.date = day;
-
-      cell.onclick = () => handleCellClick(room, day, isBooked);
       row.appendChild(cell);
     });
 
     app.appendChild(row);
   });
+
+  updateMonthView();
 }
 
-/* ===== CLICK LOGIC ===== */
-function handleCellClick(room, day, isBooked) {
-  clearSelection();
-
-  if (isBooked) {
-    CURRENT_VIEW = CURRENT_BOOKINGS.find(b =>
-      b.room === room && day >= b.checkIn && day < b.checkOut
-    );
-    openView();
-    return;
-  }
-
-  if (!SELECTED_START || SELECTED_ROOM !== room) {
-    SELECTED_ROOM = room;
-    SELECTED_START = day;
-    highlight(room, day, day);
-    return;
-  }
-
-  if (day > SELECTED_START) {
-    openModal(room, SELECTED_START, day);
-  } else {
-    SELECTED_START = day;
-    highlight(room, day, day);
-  }
+/* ===== UPDATE HEADER + CELLS (FAST) ===== */
+function updateMonthView() {
+  updateHeader();
+  updateCells();
 }
 
-/* ===== HIGHLIGHT ===== */
-function highlight(room, start, end) {
-  document.querySelectorAll('.cell').forEach(c => c.classList.remove('selected'));
-  document.querySelectorAll(`[data-room="${room}"]`).forEach(c => {
-    if (c.dataset.date >= start && c.dataset.date <= end) {
-      c.classList.add('selected');
-    }
+function updateHeader() {
+  const header = document.querySelector('.header');
+  header.innerHTML = '';
+  header.appendChild(document.createElement('div')).className = 'room-col';
+
+  DAYS.forEach(d => {
+    const c = document.createElement('div');
+    c.className = 'cell';
+    c.textContent = d.slice(8); // DD
+    header.appendChild(c);
   });
 }
 
-function clearSelection() {
-  document.querySelectorAll('.cell').forEach(c => c.classList.remove('selected'));
-}
+function updateCells() {
+  document.querySelectorAll('.row').forEach(row => {
+    const room = row.querySelector('.room-col').textContent;
+    const cells = row.querySelectorAll('.cell');
 
-/* ===== ADD BOOKING ===== */
-function openModal(room, checkIn, checkOut) {
-  document.getElementById('modal').style.display = 'block';
-  roomInput.value = room;
-  checkInInput.value = checkIn;
-  checkOutInput.value = checkOut;
-  checkOutInput.min = checkOut;
-}
+    cells.forEach((cell, idx) => {
+      if (idx === 0) return;
 
-function closeModal() {
-  document.getElementById('modal').style.display = 'none';
-  SELECTED_ROOM = SELECTED_START = null;
-}
+      const day = DAYS[idx - 1];
+      cell.dataset.date = day;
 
-function saveBooking() {
-  const room = roomInput.value;
-  const checkIn = checkInInput.value;
-  const checkOut = checkOutInput.value;
-
-  if (checkOut <= checkIn) {
-    alert('Invalid date range');
-    return;
-  }
-
-  const conflict = CURRENT_BOOKINGS.some(b =>
-    b.room === room && checkIn < b.checkOut && checkOut > b.checkIn
-  );
-  if (conflict) {
-    alert('Date conflict');
-    return;
-  }
-
-  fetch(API_URL, {
-    method: 'POST',
-    body: JSON.stringify({ room, checkIn, checkOut })
-  }).then(() => location.reload());
-}
-
-/* ===== VIEW / DELETE ===== */
-function openView() {
-  viewInfo.innerHTML = `
-    ${CURRENT_VIEW.room}<br>
-    ${CURRENT_VIEW.checkIn} → ${CURRENT_VIEW.checkOut}
-  `;
-  viewModal.style.display = 'block';
-}
-
-function closeView() {
-  viewModal.style.display = 'none';
-}
-
-function deleteBooking() {
-  fetch(API_URL, {
-    method: 'POST',
-    body: JSON.stringify({ _method:'DELETE', ...CURRENT_VIEW })
-  }).then(() => location.reload());
+      const key = `${room}|${day}`;
+      if (BOOKED_MAP[key]) {
+        cell.classList.remove('free');
+        cell.classList.add('booked');
+      } else {
+        cell.classList.remove('booked');
+        cell.classList.add('free');
+      }
+    });
+  });
 }
 </script>
 
