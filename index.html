@@ -42,10 +42,21 @@ body {
   -webkit-overflow-scrolling: touch;
 }
 
-.header,
-.row {
-  display: grid;
-  grid-auto-flow: column;
+/* ===== HEADER ===== */
+.header {
+  position: sticky;
+  top: 36px;
+  z-index: 3;
+  background: #fff;
+}
+
+.header .cell {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--muted);
+  background: #fff;
+  position: relative;   /* ❗️不要 sticky */
+  z-index: 1;
 }
 
 /* ===== ROOM COLUMN ===== */
@@ -56,15 +67,14 @@ body {
   border-right: 0.5px solid var(--border);
   font-size: 12px;
   font-weight: 500;
-  color: var(--text);
   line-height: var(--row-h);
   text-align: center;
   position: sticky;
   left: 0;
-  z-index: 2;
+  z-index: 4; /* 一定比 header 高 */
 }
 
-/* ===== CELLS ===== */
+/* ===== CELL ===== */
 .cell {
   width: var(--cell-w);
   height: var(--row-h);
@@ -74,6 +84,8 @@ body {
   text-align: center;
   user-select: none;
   touch-action: manipulation;
+  position: relative;
+  z-index: 1;
 }
 
 /* ===== HEADER ===== */
