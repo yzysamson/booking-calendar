@@ -113,26 +113,33 @@ body {
 
 /* ===== FIX: prevent room-col highlight ===== */
 
-/* 如果 row 有 hover，不让它影响 */
-.row:hover {
-  background: transparent;
+/* ===== Mobile UX Fix ===== */
+@media (max-width: 768px) {
+
+  /* 手机上不要 sticky room */
+  .room-col {
+    position: relative !important;
+    left: auto !important;
+    z-index: 1 !important;
+  }
+
+  /* 手机上不需要 hover / active 效果 */
+  .cell:hover,
+  .cell:active {
+    background: inherit;
+  }
 }
 
-/* Room 列永远保持原色 */
-.room-col {
+/* Room 列永远不参与选中 / hover 高亮 */
+.room-col:hover,
+.room-col:active,
+.row:hover .room-col {
   background: #fafafa !important;
 }
 
-/* 只让 cell 有 hover 反馈 */
-.cell:hover {
-  background: #fff2d6;
+.modal {
+  z-index: 9999;
 }
-
-/* 点击时 */
-.cell:active {
-  background: #ffe4b5;
-}
-
 </style>
 </head>
 
