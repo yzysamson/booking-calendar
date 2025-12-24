@@ -181,6 +181,15 @@ html, body{
   pointer-events:auto;
 }
 
+.modal{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.35);
+  display:none;
+
+  z-index:2147483647;   /* 🔥 压过所有 sticky / fixed */
+}
+
 .modal-box{
   position:absolute;
   bottom:0;
@@ -192,9 +201,14 @@ html, body{
   padding:12px;
 }
 
-body.modal-open #x-scroll,
-body.modal-open .topbar,
-body.modal-open #summary{
-  pointer-events:none;
+.corner-room{
+  position:absolute;
+  top:4px;
+  left:6px;
 }
 
+.corner-date{
+  position:absolute;
+  bottom:4px;
+  right:6px;
+}

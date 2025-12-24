@@ -21,9 +21,9 @@ function render(){
   html += `
     <div class="header" style="grid-template-columns:${cols}">
       <div class="room corner">
-        <span class="corner-date">Date</span>
-        <span class="corner-room">Room</span>
-      </div>
+  <span class="corner-room">Room</span>
+  <span class="corner-date">Date</span>
+</div>
   `;
 
   DAYS.forEach(d=>{
