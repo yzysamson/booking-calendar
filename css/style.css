@@ -8,7 +8,7 @@
 body{
   margin:0;
   font-family:system-ui, -apple-system, BlinkMacSystemFont;
-  background:#faf7f2;          /* IG 米色 */
+  background:#faf7f2;      /* 浅米色 */
   color:#111;
 }
 
@@ -23,6 +23,11 @@ body{
   align-items:center;
   overflow-x:auto;
   background:#faf7f2;
+  position:fixed;
+  top:0;
+  left:0;
+  right:0;
+  z-index:100;
 }
 
 .topbar input{
@@ -62,35 +67,21 @@ body{
 }
 
 /* =====================================================
-   CALENDAR LAYOUT (NO OVERLAP GUARANTEED)
+   CALENDAR SCROLL (FREEZE PANE MODEL)
 ===================================================== */
-#calendar-container{
-  display:flex;
-  width:100%;
-  overflow:hidden;
-  margin-top:52px;   /* 给 month selector + legend 让位 */
-}
-
-/* Y AXIS PLACEHOLDER (STRUCTURAL COLUMN) */
-#calendar-y{
-  width:88px;
-  flex-shrink:0;
-}
-
-/* X AXIS (ONLY SCROLLABLE AREA) */
-#calendar-x{
-  overflow-x:auto;
-  overflow-y:hidden;
+#calendar-scroll{
+  margin:0;
+  padding-top:52px;            /* 对齐 month select 下方 */
+  overflow-x:auto;             /* 只有 X 能滑 */
+  overflow-y:visible;          /* Y 自然滚 */
   -webkit-overflow-scrolling:touch;
-  overscroll-behavior-x:contain;
-  touch-action:pan-x;
-   margin-left:-88px;   /* 吃掉重复的 Room 宽度 */
-  padding-left:88px;   /* 保证内容仍然正确对齐 */
 }
 
-/* Calendar content must exceed width */
+/* calendar 内容必须能横向展开 */
 #app{
   min-width:fit-content;
+  margin:0;
+  padding:0;
 }
 
 /* =====================================================
@@ -102,7 +93,17 @@ body{
 }
 
 /* =====================================================
-   Y AXIS (ROOM / DATE)
+   FREEZE: DATE HEADER (TOP)
+===================================================== */
+.header{
+  position:sticky;
+  top:52px;                    /* 必须等于 padding-top */
+  z-index:20;
+  background:#faf7f2;
+}
+
+/* =====================================================
+   FREEZE: Y AXIS (ROOM COLUMN)
 ===================================================== */
 .room{
   width:88px;
@@ -110,11 +111,16 @@ body{
   font-size:12px;
   background:#fdfcf9;
   border-right:1px solid #e5e5e5;
+
+  position:sticky;
+  left:0;
+  z-index:10;
 }
 
-/* HEADER ROOM CELL */
+/* 左上角 Date / Room */
 .header .room{
   background:#f3f1ec;
+  z-index:30;
 }
 
 /* =====================================================
@@ -197,7 +203,7 @@ body{
 .src-walkinsoo{background:#8b4513}
 
 /* =====================================================
-   SUMMARY (NORMAL FLOW, NO OVERLAP)
+   SUMMARY (NORMAL FLOW, NO BLOCKING)
 ===================================================== */
 #summary{
   border-top:1px solid #e5e5e5;
@@ -262,93 +268,4 @@ body{
 
 #saveBtn:disabled{
   opacity:.4;
-}
-
-/* =========================
-   CALENDAR SCROLL CONTAINER
-========================= */
-#calendar-scroll{
-  overflow-x:auto;              /* 横向滑 */
-  overflow-y:visible;           /* 纵向自然 */
-  -webkit-overflow-scrolling:touch;
-  padding-top:56px;             /* 给 topbar 让位 */
-}
-
-/* =========================
-   GRID
-========================= */
-.header,
-.row{
-  display:grid;
-}
-
-/* =========================
-   FREEZE: DATE HEADER (TOP)
-========================= */
-.header{
-  position:sticky;
-  top:56px;                     /* 紧贴 topbar 下方 */
-  z-index:20;
-  background:#faf7f2;
-}
-
-/* =========================
-   FREEZE: ROOM COLUMN (LEFT)
-========================= */
-.room{
-  position:sticky;
-  left:0;
-  z-index:10;
-  background:#fdfcf9;
-  width:88px;
-  border-right:1px solid #e5e5e5;
-}
-
-/* =========================
-   FREEZE: TOP-LEFT CORNER
-========================= */
-.header .room{
-  z-index:30;                   /* 永远在最上 */
-  background:#f3f1ec;
-}
-
-/* =========================
-   X AXIS CONTENT
-========================= */
-#app{
-  min-width:fit-content;        /* 允许横向展开 */
-}
-
-/* =========================
-   CELLS
-========================= */
-.cell{
-  height:34px;
-  border:1px solid #eee;
-  background:#fff;
-}
-
-.cell.selecting{
-  background:rgba(255,56,92,.25);
-}
-
-/* =========================
-   BAR
-========================= */
-.bar{
-  height:34px;
-  border-radius:4px;
-  color:#fff;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-}
-
-/* =========================
-   SUMMARY (NORMAL FLOW)
-========================= */
-#summary{
-  margin-top:12px;
-  padding:10px;
-  background:#faf7f2;
 }
