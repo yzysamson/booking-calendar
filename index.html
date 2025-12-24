@@ -48,14 +48,10 @@ body{
   overflow-x:auto;
   -webkit-overflow-scrolling:touch
 }
-.calendar{
-  min-width:max-content
-}
+.calendar{min-width:max-content}
 
 /* ===== GRID ===== */
-.header,.row{
-  display:grid;
-}
+.header,.row{display:grid}
 
 /* ===== Y AXIS ===== */
 .room{
@@ -69,10 +65,7 @@ body{
   z-index:3;
   white-space:nowrap
 }
-.header .room{
-  background:#f5f5f5;
-  z-index:4
-}
+.header .room{background:#f5f5f5;z-index:4}
 
 /* ===== CORNER ===== */
 .corner{
@@ -95,21 +88,22 @@ body{
 .corner-date{position:absolute;top:4px;left:6px}
 .corner-room{position:absolute;bottom:4px;right:6px}
 
-/* ===== CELL (LEFT / RIGHT HALF) ===== */
+/* ===== CELL ===== */
 .cell{
+  position:relative;
   width:56px;
   height:36px;
   border:1px solid #eee;
-  display:flex;
   cursor:pointer;
 }
-
-.half{
-  flex:1;
+.cell.booked{
+  color:#fff
 }
-
-.half.left{
-  border-right:1px solid #fff;
+.cell.selecting::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  background:rgba(255,56,92,0.25);
 }
 
 /* ===== COLORS ===== */
@@ -147,6 +141,8 @@ const SOURCES = [
 ];
 
 let ROOMS=[], BOOKINGS=[], DAYS=[];
+let selectedCell = null;
+
 const app = document.getElementById('app');
 const legend = document.getElementById('legend');
 const monthPicker = document.getElementById('monthPicker');
@@ -185,36 +181,27 @@ function buildDays(){
   );
 }
 
-/* ===== HALF LOGIC (LEFT / RIGHT) ===== */
-function getHalves(room,date){
-  let left=null,right=null;
-
-  BOOKINGS.forEach(b=>{
-    if(b.room!==room) return;
-
-    // middle full day
-    if(date > b.check_in && date < b.check_out){
-      left=b; right=b;
-    }
-
-    // check-in day → right half
-    if(date === b.check_in){
-      right=b;
-    }
-
-    // check-out day → left half
-    if(date === b.check_out){
-      left=b;
-    }
-  });
-
-  return {left,right};
+/* ===== BOOKING CHECK (最终规则) ===== */
+function getCellBooking(room, date){
+  return BOOKINGS.find(b =>
+    b.room === room &&
+    date >= b.check_in &&
+    date < b.check_out
+  );
 }
 
 /* ===== CLICK ===== */
-function onHalfClick(room,date,half){
-  console.log('CLICK:',room,date,half);
-  alert(`${room}\n${date}\n${half === 'left' ? 'Checkout half' : 'Check-in half'}`);
+function onCellClick(el){
+  if(selectedCell){
+    selectedCell.classList.remove('selecting');
+  }
+  selectedCell = el;
+  el.classList.add('selecting');
+
+  const room = el.dataset.room;
+  const date = el.dataset.date;
+
+  console.log('New booking default:', room, date);
 }
 
 /* ===== RENDER ===== */
@@ -222,6 +209,7 @@ function render(){
   let html='';
   const cols = `120px repeat(${DAYS.length},56px)`;
 
+  /* header */
   html+=`
   <div class="header" style="grid-template-columns:${cols}">
     <div class="room corner">
@@ -231,23 +219,22 @@ function render(){
   DAYS.forEach(d=> html+= `<div class="cell">${d.slice(8)}</div>`);
   html+=`</div>`;
 
+  /* rows */
   ROOMS.forEach(r=>{
     html+=`<div class="row" style="grid-template-columns:${cols}">
       <div class="room">${r.name}</div>`;
     DAYS.forEach(d=>{
-      const {left,right}=getHalves(r.name,d);
-      html+=`<div class="cell">`;
-      html+= left
-        ? `<div class="half left src-${norm(left.source)}"
-            onclick="onHalfClick('${r.name}','${d}','left')"></div>`
-        : `<div class="half left"
-            onclick="onHalfClick('${r.name}','${d}','left')"></div>`;
-      html+= right
-        ? `<div class="half src-${norm(right.source)}"
-            onclick="onHalfClick('${r.name}','${d}','right')"></div>`
-        : `<div class="half"
-            onclick="onHalfClick('${r.name}','${d}','right')"></div>`;
-      html+=`</div>`;
+      const booking = getCellBooking(r.name,d);
+      let cls='cell';
+      if(booking){
+        cls+=` booked src-${norm(booking.source)}`;
+      }
+      html+=`
+        <div class="${cls}"
+             data-room="${r.name}"
+             data-date="${d}"
+             onclick="onCellClick(this)">
+        </div>`;
     });
     html+=`</div>`;
   });
