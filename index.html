@@ -2,48 +2,73 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Booking Calendar</title>
 
+<!-- Supabase SDK -->
 <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 
 <style>
+* { box-sizing: border-box; }
 body {
-  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", Arial;
   margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", Arial;
+  background: #fff;
 }
 .topbar {
-  padding: 8px;
+  padding: 10px;
   border-bottom: 1px solid #ddd;
+  display: flex;
+  gap: 8px;
 }
-.wrapper {
-  overflow-x: auto;
-}
-.row, .header {
+.wrapper { overflow-x: auto; }
+.header, .row {
   display: grid;
   grid-auto-flow: column;
-  grid-auto-columns: 60px;
+  grid-auto-columns: 56px;
 }
 .room {
-  width: 100px;
+  width: 110px;
   background: #fafafa;
   border-right: 1px solid #ddd;
-  text-align: center;
+  padding: 6px;
   font-size: 13px;
 }
 .cell {
   height: 32px;
-  border: 1px solid #ddd;
-  text-align: center;
+  border: 1px solid #eee;
   font-size: 12px;
+  text-align: center;
+  line-height: 32px;
 }
-.free { background: #FFF8EB; }
-.booked { color: #fff; }
+.free { background: #FFF8EB; cursor: pointer; }
+.booked { color: #fff; cursor: pointer; }
 .src-airbnb { background:#ff385c; }
 .src-booking { background:#003580; }
 .src-agoda { background:#e60023; }
 .src-trip { background:#ff6f00; }
 .src-slh { background:#6a5acd; }
+
+/* Modal (iOS-ish bottom sheet) */
+.modal {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,.35);
+  display: none;
+  z-index: 999;
+}
+.modal-box {
+  background:#fff;
+  border-radius:16px 16px 0 0;
+  padding:16px;
+  position:absolute;
+  bottom:0; left:0; right:0;
+}
+.modal-box h3 { margin: 0 0 8px; text-align:center; }
+.modal-box label { font-size:12px; color:#555; }
+.modal-box input, .modal-box select, .modal-box button {
+  width:100%; padding:8px; margin:6px 0;
+}
+.actions { display:flex; gap:8px; }
 </style>
 </head>
 
@@ -51,15 +76,48 @@ body {
 
 <div class="topbar">
   <input type="month" id="monthPicker">
+  <span id="status" style="font-size:12px;color:#999"></span>
 </div>
 
 <div class="wrapper" id="app"></div>
+
+<!-- Modal -->
+<div class="modal" id="modal">
+  <div class="modal-box">
+    <h3 id="modalTitle">New Booking</h3>
+
+    <label>Room</label>
+    <input id="roomInput" readonly>
+
+    <label>Check-in</label>
+    <input type="date" id="checkInInput" readonly>
+
+    <label>Check-out</label>
+    <input type="date" id="checkOutInput">
+
+    <label>Source</label>
+    <select id="sourceInput">
+      <option>Airbnb</option>
+      <option>Booking</option>
+      <option>Agoda</option>
+      <option>Trip</option>
+      <option>SLH</option>
+    </select>
+
+    <div class="actions">
+      <button id="saveBtn">Save</button>
+      <button id="deleteBtn" style="display:none">Delete</button>
+      <button onclick="closeModal()">Cancel</button>
+    </div>
+  </div>
+</div>
 
 <script>
 /* ================= CONFIG ================= */
 const SUPABASE_URL = 'https://pwscsukxfnbzjciuhtwl.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3c2NzdWt4Zm5iempjaXVodHdsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY1MzU1MDQsImV4cCI6MjA4MjExMTUwNH0.YQEXs1S3wprPMOarCL_DLXDtsSgY6I7TFM4bp_gLkW8';
 
+/* ================= INIT SUPABASE ================= */
 const supabase = supabaseJs.createClient(
   SUPABASE_URL,
   SUPABASE_ANON_KEY
@@ -69,38 +127,54 @@ const supabase = supabaseJs.createClient(
 let ROOMS = [];
 let BOOKINGS = [];
 let DAYS = [];
+let EDITING = null;
 
-/* ================= INIT ================= */
+/* ================= DOM ================= */
 const app = document.getElementById('app');
 const monthPicker = document.getElementById('monthPicker');
+const statusEl = document.getElementById('status');
+
+const modal = document.getElementById('modal');
+const roomInput = document.getElementById('roomInput');
+const checkInInput = document.getElementById('checkInInput');
+const checkOutInput = document.getElementById('checkOutInput');
+const sourceInput = document.getElementById('sourceInput');
+const saveBtn = document.getElementById('saveBtn');
+const deleteBtn = document.getElementById('deleteBtn');
+
+/* ================= BOOT ================= */
 monthPicker.value = new Date().toISOString().slice(0,7);
 monthPicker.onchange = loadAll;
+loadAll();
+setupRealtime();
 
 /* ================= LOAD ================= */
 async function loadAll() {
+  statusEl.textContent = 'Loading...';
   await loadRooms();
   await loadBookings();
   buildDays();
   render();
+  statusEl.textContent = 'OK';
 }
 
 async function loadRooms() {
-  const { data } = await supabase.from('rooms').select('*').order('id');
+  const { data, error } = await supabase.from('rooms').select('*').order('id');
+  if (error) return console.error(error);
   ROOMS = data || [];
 }
 
 async function loadBookings() {
-  const { data } = await supabase
-    .from('booking_view')
-    .select('*');
+  const { data, error } = await supabase.from('booking_view').select('*');
+  if (error) return console.error(error);
   BOOKINGS = data || [];
 }
 
 function buildDays() {
   const [y,m] = monthPicker.value.split('-').map(Number);
-  DAYS = Array.from(
-    { length: new Date(y, m, 0).getDate() },
-    (_,i)=>`${y}-${String(m).padStart(2,'0')}-${String(i+1).padStart(2,'0')}`
+  const days = new Date(y, m, 0).getDate();
+  DAYS = Array.from({length:days},(_,i)=>
+    `${y}-${String(m).padStart(2,'0')}-${String(i+1).padStart(2,'0')}`
   );
 }
 
@@ -108,19 +182,17 @@ function buildDays() {
 function render() {
   app.innerHTML = '';
 
-  // header
   const header = document.createElement('div');
   header.className = 'header';
   header.appendChild(document.createElement('div')).className = 'room';
   DAYS.forEach(d=>{
-    const c = document.createElement('div');
+    const c=document.createElement('div');
     c.className='cell';
     c.textContent=d.slice(8);
     header.appendChild(c);
   });
   app.appendChild(header);
 
-  // rows
   ROOMS.forEach(r=>{
     const row=document.createElement('div');
     row.className='row';
@@ -132,16 +204,13 @@ function render() {
 
     DAYS.forEach(d=>{
       const cell=document.createElement('div');
-      const b = BOOKINGS.find(x =>
-        x.room===r.name &&
-        d>=x.check_in &&
-        d<x.check_out
-      );
-
-      if (b) {
+      const b=BOOKINGS.find(x=>x.room===r.name && d>=x.check_in && d<x.check_out);
+      if (b){
         cell.className=`cell booked src-${b.source.toLowerCase().replace(/[^a-z]/g,'')}`;
+        cell.onclick=()=>openEdit(b);
       } else {
         cell.className='cell free';
+        cell.onclick=()=>openNew(r.name,d);
       }
       row.appendChild(cell);
     });
@@ -150,22 +219,79 @@ function render() {
   });
 }
 
+/* ================= MODAL ================= */
+function openNew(room, day){
+  EDITING=null;
+  roomInput.value=room;
+  checkInInput.value=day;
+  const d=new Date(day); d.setDate(d.getDate()+1);
+  checkOutInput.value=d.toISOString().slice(0,10);
+  deleteBtn.style.display='none';
+  modal.style.display='block';
+}
+
+function openEdit(b){
+  EDITING=b;
+  roomInput.value=b.room;
+  checkInInput.value=b.check_in;
+  checkOutInput.value=b.check_out;
+  sourceInput.value=b.source;
+  deleteBtn.style.display='block';
+  modal.style.display='block';
+}
+
+function closeModal(){
+  modal.style.display='none';
+}
+
+/* ================= SAVE / DELETE ================= */
+saveBtn.onclick = async ()=>{
+  if (checkOutInput.value <= checkInInput.value) {
+    alert('Checkout must be later than checkin');
+    return;
+  }
+
+  const room = ROOMS.find(r=>r.name===roomInput.value);
+  const payload = {
+    room_id: room.id,
+    check_in: checkInInput.value,
+    check_out: checkOutInput.value,
+    source: sourceInput.value
+  };
+
+  let res;
+  if (EDITING){
+    res = await supabase.from('bookings').update(payload).eq('id', EDITING.id);
+  } else {
+    res = await supabase.from('bookings').insert(payload);
+  }
+
+  if (res.error){
+    alert(res.error.message);
+    return;
+  }
+  closeModal();
+};
+
+deleteBtn.onclick = async ()=>{
+  if (!EDITING) return;
+  if (!confirm('Delete this booking?')) return;
+  const { error } = await supabase.from('bookings').delete().eq('id', EDITING.id);
+  if (error) alert(error.message);
+  closeModal();
+};
+
 /* ================= REALTIME ================= */
-supabase
-  .channel('bookings-realtime')
-  .on(
-    'postgres_changes',
-    { event: '*', schema: 'public', table: 'bookings' },
-    payload => {
-      console.log('Realtime update', payload.eventType);
-      loadBookings().then(render);
-    }
-  )
-  .subscribe();
-
-/* ================= START ================= */
-loadAll();
+function setupRealtime(){
+  supabase
+    .channel('bookings-rt')
+    .on(
+      'postgres_changes',
+      { event:'*', schema:'public', table:'bookings' },
+      ()=> loadAll()
+    )
+    .subscribe();
+}
 </script>
-
 </body>
 </html>
