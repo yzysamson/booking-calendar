@@ -8,96 +8,50 @@
 
 <style>
 *{box-sizing:border-box}
-body{
-  margin:0;
-  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,Arial;
-  background:#fff;color:#111
-}
+body{margin:0;font-family:system-ui;background:#fff;color:#111}
 
 /* ===== TOP ===== */
 .topbar{
-  padding:8px 10px;
-  border-bottom:1px solid #e5e5e5;
-  display:flex;
-  gap:12px;
-  align-items:center;
-  overflow-x:auto
+  padding:8px 10px;border-bottom:1px solid #e5e5e5;
+  display:flex;gap:12px;align-items:center;overflow-x:auto
 }
 .topbar input{padding:6px;font-size:14px}
 
 /* ===== LEGEND ===== */
-.legend{
-  display:flex;
-  gap:8px;
-  font-size:12px;
-  white-space:nowrap
-}
+.legend{display:flex;gap:8px;font-size:12px;white-space:nowrap}
 .legend-item{
-  display:flex;
-  align-items:center;
-  gap:4px;
-  padding:4px 6px;
-  border-radius:6px;
-  cursor:pointer
+  display:flex;align-items:center;gap:4px;
+  padding:4px 6px;border-radius:6px;cursor:pointer
 }
 .legend-item.active{background:#eee}
-.legend-color{
-  width:12px;
-  height:12px;
-  border-radius:3px
-}
-
-/* ===== SCROLL ===== */
-.scroll-x{
-  overflow-x:auto;
-  -webkit-overflow-scrolling:touch
-}
-.calendar{min-width:max-content}
+.legend-color{width:12px;height:12px;border-radius:3px}
 
 /* ===== GRID ===== */
+.scroll-x{overflow-x:auto}
 .header,.row{display:grid}
 
 /* ===== Y AXIS ===== */
 .room{
-  width:92px;
-  padding:6px;
-  font-size:12px;
-  background:#fafafa;
-  border-right:1px solid #e5e5e5;
-  position:sticky;
-  left:0;
-  z-index:3
+  width:92px;padding:6px;font-size:12px;
+  background:#fafafa;border-right:1px solid #e5e5e5;
+  position:sticky;left:0;z-index:3
 }
 .header .room{background:#f5f5f5;z-index:4}
 
 /* ===== CELL ===== */
 .cell{
-  position:relative;
-  width:56px;
-  height:36px;
-  border:1px solid #eee;
-  cursor:pointer;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  font-size:12px;
+  position:relative;height:36px;border:1px solid #eee;
+  display:flex;align-items:center;justify-content:center;
+  font-size:12px;cursor:pointer
 }
-.cell.booked{
-  color:#fff;
-  flex-direction:column;
-  font-size:11px
-}
-.cell .price{
-  font-size:10px;
-  opacity:.9
-}
+.cell.booked{color:#fff;font-size:11px}
+.cell .price{font-size:10px;opacity:.9}
 
-/* ===== SELECTING ===== */
-.cell.selecting::after{
-  content:"";
-  position:absolute;
-  inset:0;
-  background:rgba(255,56,92,0.25)
+/* ===== MERGED BAR ===== */
+.bar{
+  height:36px;color:#fff;font-size:11px;
+  display:flex;align-items:center;justify-content:center;
+  border-radius:4px
 }
 
 /* ===== COLORS ===== */
@@ -110,34 +64,16 @@ body{
 .src-walkinsoo{background:#8b4513}
 
 /* ===== MODAL ===== */
-.modal{
-  position:fixed;
-  inset:0;
-  background:rgba(0,0,0,.35);
-  display:none;
-  z-index:999
-}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.35);display:none}
 .modal-box{
-  background:#fff;
-  border-radius:16px 16px 0 0;
-  padding:16px;
-  position:absolute;
-  bottom:0;left:0;right:0
+  background:#fff;border-radius:16px 16px 0 0;
+  padding:16px;position:absolute;bottom:0;left:0;right:0
 }
-.modal-box label{font-size:12px;color:#555}
-.modal-box input,
-.modal-box select,
-.modal-box button{
-  width:100%;
-  padding:12px;
-  margin:6px 0;
-  font-size:15px;
-  border-radius:10px;
-  border:1px solid #ddd
+.modal-box input,.modal-box select,.modal-box button{
+  width:100%;padding:12px;margin:6px 0;font-size:15px
 }
 .actions{display:flex;gap:8px}
 .actions button{flex:1}
-.conflict-text{color:#c00;font-size:12px}
 </style>
 </head>
 
@@ -170,17 +106,13 @@ body{
     <select id="sourceInput"></select>
 
     <label>Price</label>
-    <input type="number" id="priceInput" step="0.01">
+    <input type="number" id="priceInput">
 
     <label>Remark</label>
     <input type="text" id="remarkInput">
 
-    <div class="conflict-text" id="conflictText" style="display:none">
-      Date range conflicts
-    </div>
-
     <div class="actions">
-      <button id="saveBtn">Save</button>
+      <button id="saveBtn"></button>
       <button id="deleteBtn" style="display:none">Delete</button>
       <button onclick="closeModal()">Cancel</button>
     </div>
@@ -189,9 +121,9 @@ body{
 
 <script>
 /* ===== CONFIG ===== */
-const sb = supabase.createClient(
-  'https://pwscsukxfnbzjciuhtwl.supabase.co',
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3c2NzdWt4Zm5iempjaXVodHdsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY1MzU1MDQsImV4cCI6MjA4MjExMTUwNH0.YQEXs1S3wprPMOarCL_DLXDtsSgY6I7TFM4bp_gLkW8'
+const sb=supabase.createClient(
+ 'https://pwscsukxfnbzjciuhtwl.supabase.co',
+ 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3c2NzdWt4Zm5iempjaXVodHdsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY1MzU1MDQsImV4cCI6MjA4MjExMTUwNH0.YQEXs1S3wprPMOarCL_DLXDtsSgY6I7TFM4bp_gLkW8'
 );
 
 const SOURCES=[
@@ -199,16 +131,15 @@ const SOURCES=[
   'Walk-in (Wayne)','Walk-in (Soo)'
 ];
 
-let ROOMS=[], BOOKINGS=[], DAYS=[];
-let selectState=null;
+let ROOMS=[],BOOKINGS=[],DAYS=[];
+let FILTER=new Set();
 let editingBooking=null;
 
 const app=document.getElementById('app');
-const modal=document.getElementById('modal');
 const legend=document.getElementById('legend');
-const monthPicker=document.getElementById('monthPicker');
+const modal=document.getElementById('modal');
 
-const roomInput=document.getElementById('roomInput');
+const roomInput=roomInputEl();
 const checkinInput=document.getElementById('checkinInput');
 const checkoutInput=document.getElementById('checkoutInput');
 const sourceInput=document.getElementById('sourceInput');
@@ -218,7 +149,8 @@ const remarkInput=document.getElementById('remarkInput');
 const saveBtn=document.getElementById('saveBtn');
 const deleteBtn=document.getElementById('deleteBtn');
 const modalTitle=document.getElementById('modalTitle');
-const conflictText=document.getElementById('conflictText');
+
+function roomInputEl(){return document.getElementById('roomInput')}
 
 /* ===== INIT ===== */
 monthPicker.value=new Date().toISOString().slice(0,7);
@@ -229,18 +161,28 @@ loadAll();
 async function loadAll(){
   ROOMS=(await sb.from('rooms').select('*').order('id')).data||[];
   BOOKINGS=(await sb.from('booking_view').select('*')).data||[];
-  buildDays(); buildSelects(); render();
+  buildLegend();buildDays();buildSelects();render();
 }
 
-/* ===== SELECTS ===== */
-function buildSelects(){
-  roomInput.innerHTML='';
-  ROOMS.forEach(r=>{
-    roomInput.innerHTML+=`<option value="${r.id}">${r.name}</option>`;
-  });
-  sourceInput.innerHTML='';
+/* ===== LEGEND ===== */
+function buildLegend(){
+  legend.innerHTML='';
+  const all=document.createElement('div');
+  all.className='legend-item active';
+  all.textContent='Show All';
+  all.onclick=()=>{FILTER.clear();render()};
+  legend.appendChild(all);
+
   SOURCES.forEach(s=>{
-    sourceInput.innerHTML+=`<option>${s}</option>`;
+    const el=document.createElement('div');
+    el.className='legend-item';
+    el.innerHTML=`<span class="legend-color src-${norm(s)}"></span>${s}`;
+    el.onclick=()=>{
+      FILTER.has(s)?FILTER.delete(s):FILTER.add(s);
+      el.classList.toggle('active');
+      render();
+    };
+    legend.appendChild(el);
   });
 }
 
@@ -251,75 +193,15 @@ function buildDays(){
     .map((_,i)=>`${y}-${String(m).padStart(2,'0')}-${String(i+1).padStart(2,'0')}`);
 }
 
-/* ===== CLICK CELL ===== */
-function onCellClick(el){
-  const room=el.dataset.room;
-  const date=el.dataset.date;
-  const booking=BOOKINGS.find(b=>b.room===room && date>=b.check_in && date<b.check_out);
-
-  document.querySelectorAll('.cell.selecting').forEach(c=>c.classList.remove('selecting'));
-
-  if(booking){ openEdit(booking); return; }
-
-  if(!selectState||selectState.room!==room){
-    selectState={room,checkin:date};
-    el.classList.add('selecting'); return;
-  }
-
-  openNew(room,selectState.checkin,date);
-  selectState=null;
+/* ===== SELECTS ===== */
+function buildSelects(){
+  roomInput.innerHTML='';
+  ROOMS.forEach(r=>roomInput.innerHTML+=`<option value="${r.id}">${r.name}</option>`);
+  sourceInput.innerHTML='';
+  SOURCES.forEach(s=>sourceInput.innerHTML+=`<option>${s}</option>`);
 }
 
-/* ===== MODAL ===== */
-function openNew(room,ci,co){
-  modalTitle.textContent='New Booking';
-  editingBooking=null;
-  roomInput.value=ROOMS.find(r=>r.name===room).id;
-  checkinInput.value=ci;
-  checkoutInput.value=co;
-  priceInput.value='';
-  remarkInput.value='';
-  deleteBtn.style.display='none';
-  modal.style.display='block';
-}
-function openEdit(b){
-  modalTitle.textContent='Edit Booking';
-  editingBooking=b;
-  roomInput.value=b.room_id;
-  checkinInput.value=b.check_in;
-  checkoutInput.value=b.check_out;
-  sourceInput.value=b.source;
-  priceInput.value=b.price ?? '';
-  remarkInput.value=b.remark ?? '';
-  deleteBtn.style.display='block';
-  modal.style.display='block';
-}
-function closeModal(){ modal.style.display='none'; }
-
-/* ===== SAVE / DELETE ===== */
-saveBtn.onclick=async()=>{
-  const payload={
-    room_id:+roomInput.value,
-    check_in:checkinInput.value,
-    check_out:checkoutInput.value,
-    source:sourceInput.value,
-    price:priceInput.value||0,
-    remark:remarkInput.value||null
-  };
-  if(editingBooking)
-    await sb.from('bookings').update(payload).eq('id',editingBooking.id);
-  else
-    await sb.from('bookings').insert(payload);
-
-  closeModal(); loadAll();
-};
-
-deleteBtn.onclick=async()=>{
-  await sb.from('bookings').delete().eq('id',editingBooking.id);
-  closeModal(); loadAll();
-};
-
-/* ===== RENDER ===== */
+/* ===== RENDER (MERGE LOGIC) ===== */
 function render(){
   let html='';
   const cols=`92px repeat(${DAYS.length},56px)`;
@@ -332,21 +214,103 @@ function render(){
   ROOMS.forEach(r=>{
     html+=`<div class="row" style="grid-template-columns:${cols}">
       <div class="room">${r.name}</div>`;
-    DAYS.forEach(d=>{
-      const b=BOOKINGS.find(x=>x.room===r.name && d>=x.check_in && d<x.check_out);
-      let cls='cell',content='';
-      if(b){
-        cls+=` booked src-${b.source.toLowerCase().replace(/[^a-z]/g,'')}`;
-        if(b.price>0) content=`<div class="price">${b.price}</div>`;
+
+    let i=0;
+    while(i<DAYS.length){
+      const d=DAYS[i];
+      const b=BOOKINGS.find(x=>
+        x.room===r.name &&
+        d>=x.check_in && d<x.check_out &&
+        (FILTER.size===0||FILTER.has(x.source))
+      );
+
+      if(!b){
+        html+=`<div class="cell" data-room="${r.name}" data-date="${d}"
+               onclick="onCellClick(this)"></div>`;
+        i++;continue;
       }
-      html+=`<div class="${cls}" data-room="${r.name}" data-date="${d}"
-              onclick="onCellClick(this)">${content}</div>`;
-    });
+
+      const span=(new Date(b.check_out)-new Date(d))/86400000;
+      html+=`
+      <div class="bar src-${norm(b.source)}"
+           style="grid-column: span ${span}"
+           onclick="openEdit(${b.id})">
+        ${b.price>0?b.price:''}
+      </div>`;
+      i+=span;
+    }
     html+=`</div>`;
   });
 
   app.innerHTML=html;
 }
+
+/* ===== MODAL LOGIC ===== */
+function openNew(room,ci){
+  modalTitle.textContent='New Booking';
+  saveBtn.textContent='Save';
+  editingBooking=null;
+
+  roomInput.value=ROOMS.find(r=>r.name===room).id;
+  checkinInput.value=ci;
+
+  roomInput.disabled=true;
+  checkinInput.disabled=true;
+  sourceInput.disabled=true;
+
+  deleteBtn.style.display='none';
+  modal.style.display='block';
+}
+
+function openEdit(id){
+  const b=BOOKINGS.find(x=>x.id===id);
+  editingBooking=b;
+  modalTitle.textContent='Edit Booking';
+  saveBtn.textContent='Update';
+
+  roomInput.value=b.room_id;
+  checkinInput.value=b.check_in;
+  checkoutInput.value=b.check_out;
+  sourceInput.value=b.source;
+  priceInput.value=b.price??'';
+  remarkInput.value=b.remark??'';
+
+  roomInput.disabled=false;
+  checkinInput.disabled=false;
+  sourceInput.disabled=false;
+
+  deleteBtn.style.display='block';
+  modal.style.display='block';
+}
+
+function closeModal(){modal.style.display='none'}
+
+/* ===== SAVE / DELETE ===== */
+saveBtn.onclick=async()=>{
+  const payload={
+    room_id:+roomInput.value,
+    check_in:checkinInput.value,
+    check_out:checkoutInput.value,
+    source:sourceInput.value,
+    price:priceInput.value||0,
+    remark:remarkInput.value||null
+  };
+  editingBooking
+    ? await sb.from('bookings').update(payload).eq('id',editingBooking.id)
+    : await sb.from('bookings').insert(payload);
+  closeModal();loadAll();
+};
+
+deleteBtn.onclick=async()=>{
+  await sb.from('bookings').delete().eq('id',editingBooking.id);
+  closeModal();loadAll();
+};
+
+function onCellClick(el){
+  openNew(el.dataset.room,el.dataset.date);
+}
+
+function norm(s){return s.toLowerCase().replace(/[^a-z]/g,'')}
 </script>
 
 </body>
