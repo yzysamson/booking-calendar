@@ -212,3 +212,48 @@ html, body{
   bottom:4px;
   right:6px;
 }
+
+/* ===== LEGEND HARD RESET ===== */
+.topbar{
+  display:flex;
+  align-items:center;
+}
+
+.legend{
+  display:flex !important;
+  align-items:center;
+  gap:12px;
+  font-size:12px;
+  white-space:nowrap;
+  overflow-x:auto;
+  -webkit-overflow-scrolling:touch;
+}
+
+.legend-item{
+  display:flex !important;
+  align-items:center;
+  gap:6px;
+  padding:6px 10px;
+  border-radius:8px;
+  cursor:pointer;
+}
+
+.legend-color{
+  width:10px;
+  height:10px;
+  border-radius:3px;
+  display:inline-block;
+}
+
+body.modal-open #x-scroll{
+  overflow:hidden;     /* 防止 reflow 抖动 */
+}
+
+body.modal-open .room{
+  position:sticky;     /* 强制 sticky 不回退 */
+}
+
+#app{
+  position:relative;
+  isolation:isolate;  /* 🔥 新 stacking context，防止被 modal 影响 */
+}
