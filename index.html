@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Booking Calendar</title>
 
-<!-- Supabase SDK（只引入一次） -->
+<!-- Supabase SDK v2（全局会注入 window.supabase） -->
 <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 
 <style>
@@ -50,7 +50,6 @@ body {
 .src-trip { background:#ff6f00; }
 .src-slh { background:#6a5acd; }
 
-/* Modal (iOS-ish bottom sheet) */
 .modal {
   position: fixed; inset: 0;
   background: rgba(0,0,0,.35);
@@ -65,12 +64,10 @@ body {
   bottom:0; left:0; right:0;
 }
 .modal-box h3 { margin: 0 0 8px; text-align:center; }
-.modal-box label { font-size:12px; color:#555; }
 .modal-box input, .modal-box select, .modal-box button {
   width:100%; padding:8px; margin:6px 0;
 }
 .actions { display:flex; gap:8px; }
-.status { font-size:12px; color:#999; }
 </style>
 </head>
 
@@ -78,26 +75,19 @@ body {
 
 <div class="topbar">
   <input type="month" id="monthPicker">
-  <span class="status" id="status"></span>
+  <span id="status" style="font-size:12px;color:#999"></span>
 </div>
 
 <div class="wrapper" id="app"></div>
 
-<!-- Modal -->
 <div class="modal" id="modal">
   <div class="modal-box">
-    <h3 id="modalTitle">Booking</h3>
+    <h3>Booking</h3>
 
-    <label>Room</label>
     <input id="roomInput" readonly>
-
-    <label>Check-in</label>
     <input type="date" id="checkInInput" readonly>
-
-    <label>Check-out</label>
     <input type="date" id="checkOutInput">
 
-    <label>Source</label>
     <select id="sourceInput">
       <option>Airbnb</option>
       <option>Booking</option>
@@ -115,12 +105,12 @@ body {
 </div>
 
 <script>
-/* ================= CONFIG（只在这里） ================= */
+/* ================= CONFIG ================= */
 const SUPABASE_URL = 'https://pwscsukxfnbzjciuhtwl.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3c2NzdWt4Zm5iempjaXVodHdsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY1MzU1MDQsImV4cCI6MjA4MjExMTUwNH0.YQEXs1S3wprPMOarCL_DLXDtsSgY6I7TFM4bp_gLkW8';
 
-/* ================= INIT SUPABASE（只初始化一次） ================= */
-const supabase = supabaseJs.createClient(
+/* ================= INIT CLIENT（注意变量名 sb） ================= */
+const sb = supabase.createClient(
   SUPABASE_URL,
   SUPABASE_ANON_KEY
 );
@@ -161,22 +151,22 @@ async function loadAll() {
 }
 
 async function loadRooms() {
-  const { data, error } = await supabase.from('rooms').select('*').order('id');
-  if (error) { console.error(error); statusEl.textContent = error.message; return; }
+  const { data, error } = await sb.from('rooms').select('*').order('id');
+  if (error) return console.error(error);
   ROOMS = data || [];
 }
 
 async function loadBookings() {
-  const { data, error } = await supabase.from('booking_view').select('*');
-  if (error) { console.error(error); statusEl.textContent = error.message; return; }
+  const { data, error } = await sb.from('booking_view').select('*');
+  if (error) return console.error(error);
   BOOKINGS = data || [];
 }
 
 function buildDays() {
   const [y,m] = monthPicker.value.split('-').map(Number);
-  const days = new Date(y, m, 0).getDate();
-  DAYS = Array.from({length:days},(_,i)=>
-    `${y}-${String(m).padStart(2,'0')}-${String(i+1).padStart(2,'0')}`
+  DAYS = Array.from(
+    {length:new Date(y,m,0).getDate()},
+    (_,i)=>`${y}-${String(m).padStart(2,'0')}-${String(i+1).padStart(2,'0')}`
   );
 }
 
@@ -261,9 +251,9 @@ saveBtn.onclick = async ()=>{
 
   let res;
   if (EDITING){
-    res = await supabase.from('bookings').update(payload).eq('id', EDITING.id);
+    res = await sb.from('bookings').update(payload).eq('id', EDITING.id);
   } else {
-    res = await supabase.from('bookings').insert(payload);
+    res = await sb.from('bookings').insert(payload);
   }
   if (res.error){ alert(res.error.message); return; }
   closeModal();
@@ -272,15 +262,14 @@ saveBtn.onclick = async ()=>{
 deleteBtn.onclick = async ()=>{
   if (!EDITING) return;
   if (!confirm('Delete this booking?')) return;
-  const { error } = await supabase.from('bookings').delete().eq('id', EDITING.id);
+  const { error } = await sb.from('bookings').delete().eq('id', EDITING.id);
   if (error) alert(error.message);
   closeModal();
 };
 
 /* ================= REALTIME ================= */
 function setupRealtime(){
-  supabase
-    .channel('bookings-rt')
+  sb.channel('bookings-rt')
     .on('postgres_changes',
         { event:'*', schema:'public', table:'bookings' },
         ()=> loadAll())
