@@ -123,3 +123,40 @@ body{
 #calendar-wrap::-webkit-scrollbar{
   display:none; /* iOS 原生没有 scrollbar */
 }
+
+#calendar-wrap{
+  display:flex;
+  width:100%;
+  overflow:hidden;
+}
+
+#calendar-y{
+  width:88px;           /* 和 .room 一致 */
+  flex-shrink:0;
+}
+
+#calendar-x{
+  overflow-x:auto;
+  overflow-y:hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+  touch-action: pan-x;
+}
+
+#app{
+  min-width:fit-content;
+}
+
+.header{
+  position:sticky;
+  top:48px;             /* topbar 高度 */
+  z-index:5;
+  background:#faf7f2;
+}
+
+.room{
+  position:sticky;
+  left:0;
+  z-index:6; /* 一定要比 header 高 */
+}
+
