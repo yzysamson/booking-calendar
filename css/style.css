@@ -20,7 +20,7 @@ html, body{
    TOPBAR (FREEZE)
 ===================================================== */
 :root{
-  --topbar-h: 56px;
+  --topbar-h: 72px;
   --summary-h: 120px;
 }
 
@@ -37,6 +37,7 @@ html, body{
   background:#faf7f2;
   border-bottom:1px solid #e5e5e5;
   z-index:100;
+  height:var(--topbar-h);
 }
 
 .topbar input{
@@ -258,8 +259,8 @@ html, body{
 /* ========== MAIN SCREEN ========== */
 .screen{
   position:fixed;
-  top:56px;
-  bottom:120px;
+  top:var(--topbar-h);     /* ← 就是这里 */
+  bottom:var(--summary-h);
   left:0;
   right:0;
   display:flex;
