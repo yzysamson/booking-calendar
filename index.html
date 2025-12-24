@@ -18,25 +18,44 @@ body{
 .topbar{
   padding:8px 10px;
   border-bottom:1px solid #e5e5e5;
-  display:flex;gap:10px;align-items:center;
+  display:flex;
+  gap:12px;
+  align-items:center;
   overflow-x:auto
 }
 .topbar input{padding:6px;font-size:14px}
 
 /* ===== LEGEND ===== */
-.legend{display:flex;gap:8px;font-size:12px;white-space:nowrap}
-.legend-item{
-  display:flex;align-items:center;gap:4px;
-  padding:4px 6px;border-radius:6px;
+.legend{
+  display:flex;
+  gap:10px;
+  font-size:12px;
+  white-space:nowrap
 }
-.legend-color{width:12px;height:12px;border-radius:3px}
+.legend-item{
+  display:flex;
+  align-items:center;
+  gap:4px
+}
+.legend-color{
+  width:12px;
+  height:12px;
+  border-radius:3px
+}
 
 /* ===== SCROLL ===== */
-.scroll-x{overflow-x:auto;-webkit-overflow-scrolling:touch}
-.calendar{min-width:max-content}
+.scroll-x{
+  overflow-x:auto;
+  -webkit-overflow-scrolling:touch
+}
+.calendar{
+  min-width:max-content
+}
 
 /* ===== GRID ===== */
-.header,.row{display:grid}
+.header,.row{
+  display:grid;
+}
 
 /* ===== Y AXIS ===== */
 .room{
@@ -45,10 +64,15 @@ body{
   font-size:13px;
   background:#fafafa;
   border-right:1px solid #e5e5e5;
-  position:sticky;left:0;z-index:3;
+  position:sticky;
+  left:0;
+  z-index:3;
   white-space:nowrap
 }
-.header .room{background:#f5f5f5;z-index:4}
+.header .room{
+  background:#f5f5f5;
+  z-index:4
+}
 
 /* ===== CORNER ===== */
 .corner{
@@ -59,7 +83,8 @@ body{
 }
 .corner::before{
   content:"";
-  position:absolute;inset:0;
+  position:absolute;
+  inset:0;
   background:linear-gradient(
     45deg,
     transparent 49.5%,
@@ -72,21 +97,25 @@ body{
 
 /* ===== CELL ===== */
 .cell{
-  width:56px;height:36px;
+  width:56px;
+  height:36px;
   border:1px solid #eee;
   display:flex;
   flex-direction:column;
+  cursor:pointer;
 }
-.half{flex:1}
-.half.top{border-bottom:1px solid #fff}
-
-/* conflict */
+.half{
+  flex:1
+}
+.half.top{
+  border-bottom:1px solid #fff
+}
 .half.conflict{
   outline:2px solid #d10000;
   outline-offset:-2px;
 }
 
-/* colors */
+/* ===== COLORS ===== */
 .src-airbnb{background:#ff385c}
 .src-booking{background:#003580}
 .src-agoda{background:#e60023}
@@ -101,6 +130,7 @@ body{
 
 <div class="topbar">
   <input type="month" id="monthPicker">
+  <div class="legend" id="legend"></div>
 </div>
 
 <div class="scroll-x">
@@ -108,40 +138,72 @@ body{
 </div>
 
 <script>
-const SUPABASE_URL='https://pwscsukxfnbzjciuhtwl.supabase.co';
-const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3c2NzdWt4Zm5iempjaXVodHdsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY1MzU1MDQsImV4cCI6MjA4MjExMTUwNH0.YQEXs1S3wprPMOarCL_DLXDtsSgY6I7TFM4bp_gLkW8';
-const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+/* ===== CONFIG ===== */
+const sb = supabase.createClient(
+  'https://pwscsukxfnbzjciuhtwl.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3c2NzdWt4Zm5iempjaXVodHdsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY1MzU1MDQsImV4cCI6MjA4MjExMTUwNH0.YQEXs1S3wprPMOarCL_DLXDtsSgY6I7TFM4bp_gLkW8'
+);
 
-const SOURCES=[
+const SOURCES = [
   'Airbnb','Booking','Agoda','Trip','SLH',
   'Walk-in (Wayne)','Walk-in (Soo)'
 ];
 
-let ROOMS=[],BOOKINGS=[],DAYS=[];
-const app=document.getElementById('app');
-const monthPicker=document.getElementById('monthPicker');
+let ROOMS=[], BOOKINGS=[], DAYS=[];
+const app = document.getElementById('app');
+const legend = document.getElementById('legend');
+const monthPicker = document.getElementById('monthPicker');
 
-monthPicker.value=new Date().toISOString().slice(0,7);
-monthPicker.onchange=loadAll;
+/* ===== INIT ===== */
+monthPicker.value = new Date().toISOString().slice(0,7);
+monthPicker.onchange = loadAll;
 loadAll();
 
+/* ===== LOAD ===== */
 async function loadAll(){
-  ROOMS=(await sb.from('rooms').select('*').order('id')).data||[];
-  BOOKINGS=(await sb.from('booking_view').select('*')).data||[];
-  buildDays();render();
+  ROOMS = (await sb.from('rooms').select('*').order('id')).data || [];
+  BOOKINGS = (await sb.from('booking_view').select('*')).data || [];
+  buildLegend();
+  buildDays();
+  render();
+}
+
+function buildLegend(){
+  legend.innerHTML='';
+  SOURCES.forEach(s=>{
+    const el=document.createElement('div');
+    el.className='legend-item';
+    el.innerHTML=
+      `<span class="legend-color src-${norm(s)}"></span>${s}`;
+    legend.appendChild(el);
+  });
 }
 
 function buildDays(){
-  const [y,m]=monthPicker.value.split('-').map(Number);
-  DAYS=[...Array(new Date(y,m,0).getDate())]
-    .map((_,i)=>`${y}-${String(m).padStart(2,'0')}-${String(i+1).padStart(2,'0')}`);
+  const [y,m] = monthPicker.value.split('-').map(Number);
+  DAYS = Array.from({length:new Date(y,m,0).getDate()},(_,i)=>
+    `${y}-${String(m).padStart(2,'0')}-${String(i+1).padStart(2,'0')}`
+  );
 }
 
-/* ===== conflict detect ===== */
-function hasHalfConflict(room,date,half){
+/* ===== HALF LOGIC ===== */
+function getHalves(room,date){
+  let top=null,bottom=null;
+  BOOKINGS.forEach(b=>{
+    if(b.room!==room) return;
+    if(date>b.check_in && date<b.check_out){
+      top=b; bottom=b;
+    }
+    if(date===b.check_in) bottom=b;
+    if(date===b.check_out) top=b;
+  });
+  return {top,bottom};
+}
+
+function hasConflict(room,date,half){
   let count=0;
   BOOKINGS.forEach(b=>{
-    if(b.room!==room)return;
+    if(b.room!==room) return;
     if(date>b.check_in && date<b.check_out) count++;
     if(date===b.check_in && half==='bottom') count++;
     if(date===b.check_out && half==='top') count++;
@@ -149,54 +211,43 @@ function hasHalfConflict(room,date,half){
   return count>1;
 }
 
-function getHalf(room,date){
-  let top=null,bottom=null;
-  BOOKINGS.forEach(b=>{
-    if(b.room!==room)return;
-    if(date>b.check_in && date<b.check_out){top=b;bottom=b}
-    if(date===b.check_in) bottom=b;
-    if(date===b.check_out) top=b;
-  });
-  return {top,bottom};
-}
-
-/* ===== render ===== */
+/* ===== RENDER ===== */
 function render(){
   let html='';
-  const cols=`110px repeat(${DAYS.length},56px)`;
+  const cols = `110px repeat(${DAYS.length},56px)`;
 
-  html+=`<div class="header" style="grid-template-columns:${cols}">
+  html+=`
+  <div class="header" style="grid-template-columns:${cols}">
     <div class="room corner">
       <span class="corner-date">Date</span>
       <span class="corner-room">Room</span>
     </div>`;
-  DAYS.forEach(()=>html+=`<div class="cell"><div class="half top"></div><div class="half"></div></div>`);
-  html+='</div>';
+  DAYS.forEach(d=> html+= `<div class="cell">${d.slice(8)}</div>`);
+  html+=`</div>`;
 
   ROOMS.forEach(r=>{
     html+=`<div class="row" style="grid-template-columns:${cols}">
       <div class="room">${r.name}</div>`;
     DAYS.forEach(d=>{
-      const {top,bottom}=getHalf(r.name,d);
-      const tConflict=top&&hasHalfConflict(r.name,d,'top');
-      const bConflict=bottom&&hasHalfConflict(r.name,d,'bottom');
-
-      html+=`<div class="cell">`;
-      html+=top
-        ? `<div class="half top src-${norm(top.source)} ${tConflict?'conflict':''}"></div>`
+      const {top,bottom} = getHalves(r.name,d);
+      html+=`<div class="cell" onclick="console.log('${r.name}', '${d}')">`;
+      html+= top
+        ? `<div class="half top src-${norm(top.source)} ${hasConflict(r.name,d,'top')?'conflict':''}"></div>`
         : `<div class="half top"></div>`;
-      html+=bottom
-        ? `<div class="half src-${norm(bottom.source)} ${bConflict?'conflict':''}"></div>`
+      html+= bottom
+        ? `<div class="half src-${norm(bottom.source)} ${hasConflict(r.name,d,'bottom')?'conflict':''}"></div>`
         : `<div class="half"></div>`;
       html+=`</div>`;
     });
-    html+='</div>';
+    html+=`</div>`;
   });
 
-  app.innerHTML=html;
+  app.innerHTML = html;
 }
 
-function norm(s){return s.toLowerCase().replace(/[^a-z]/g,'')}
+function norm(s){
+  return s.toLowerCase().replace(/[^a-z]/g,'');
+}
 </script>
 
 </body>
