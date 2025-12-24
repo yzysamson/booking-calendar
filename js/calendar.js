@@ -61,3 +61,17 @@ function onCellClick(el){
   openNew(room,selectState.checkin,date);
   selectState=null;
 }
+
+// ===== RENDER Y AXIS (ROOM COLUMN) =====
+function renderYAxis(){
+  const y = document.getElementById('y-rooms');
+  if(!y) return;
+
+  y.innerHTML = '';
+  ROOMS.forEach(r=>{
+    const div = document.createElement('div');
+    div.className = 'y-room';
+    div.textContent = r.name;
+    y.appendChild(div);
+  });
+}

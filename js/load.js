@@ -7,5 +7,6 @@ async function loadAll(){
   buildDays();
   buildSelects();
   render();
+  renderYAxis();
   renderSummary();
 }
