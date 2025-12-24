@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Booking Calendar</title>
 
-<!-- Supabase SDK -->
+<!-- Supabase SDK（只引入一次） -->
 <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 
 <style>
@@ -20,6 +20,7 @@ body {
   border-bottom: 1px solid #ddd;
   display: flex;
   gap: 8px;
+  align-items: center;
 }
 .wrapper { overflow-x: auto; }
 .header, .row {
@@ -69,6 +70,7 @@ body {
   width:100%; padding:8px; margin:6px 0;
 }
 .actions { display:flex; gap:8px; }
+.status { font-size:12px; color:#999; }
 </style>
 </head>
 
@@ -76,7 +78,7 @@ body {
 
 <div class="topbar">
   <input type="month" id="monthPicker">
-  <span id="status" style="font-size:12px;color:#999"></span>
+  <span class="status" id="status"></span>
 </div>
 
 <div class="wrapper" id="app"></div>
@@ -84,7 +86,7 @@ body {
 <!-- Modal -->
 <div class="modal" id="modal">
   <div class="modal-box">
-    <h3 id="modalTitle">New Booking</h3>
+    <h3 id="modalTitle">Booking</h3>
 
     <label>Room</label>
     <input id="roomInput" readonly>
@@ -113,11 +115,11 @@ body {
 </div>
 
 <script>
-/* ================= CONFIG ================= */
+/* ================= CONFIG（只在这里） ================= */
 const SUPABASE_URL = 'https://pwscsukxfnbzjciuhtwl.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3c2NzdWt4Zm5iempjaXVodHdsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY1MzU1MDQsImV4cCI6MjA4MjExMTUwNH0.YQEXs1S3wprPMOarCL_DLXDtsSgY6I7TFM4bp_gLkW8';
 
-/* ================= INIT SUPABASE ================= */
+/* ================= INIT SUPABASE（只初始化一次） ================= */
 const supabase = supabaseJs.createClient(
   SUPABASE_URL,
   SUPABASE_ANON_KEY
@@ -160,13 +162,13 @@ async function loadAll() {
 
 async function loadRooms() {
   const { data, error } = await supabase.from('rooms').select('*').order('id');
-  if (error) return console.error(error);
+  if (error) { console.error(error); statusEl.textContent = error.message; return; }
   ROOMS = data || [];
 }
 
 async function loadBookings() {
   const { data, error } = await supabase.from('booking_view').select('*');
-  if (error) return console.error(error);
+  if (error) { console.error(error); statusEl.textContent = error.message; return; }
   BOOKINGS = data || [];
 }
 
@@ -226,6 +228,7 @@ function openNew(room, day){
   checkInInput.value=day;
   const d=new Date(day); d.setDate(d.getDate()+1);
   checkOutInput.value=d.toISOString().slice(0,10);
+  sourceInput.value='Airbnb';
   deleteBtn.style.display='none';
   modal.style.display='block';
 }
@@ -240,9 +243,7 @@ function openEdit(b){
   modal.style.display='block';
 }
 
-function closeModal(){
-  modal.style.display='none';
-}
+function closeModal(){ modal.style.display='none'; }
 
 /* ================= SAVE / DELETE ================= */
 saveBtn.onclick = async ()=>{
@@ -250,7 +251,6 @@ saveBtn.onclick = async ()=>{
     alert('Checkout must be later than checkin');
     return;
   }
-
   const room = ROOMS.find(r=>r.name===roomInput.value);
   const payload = {
     room_id: room.id,
@@ -265,11 +265,7 @@ saveBtn.onclick = async ()=>{
   } else {
     res = await supabase.from('bookings').insert(payload);
   }
-
-  if (res.error){
-    alert(res.error.message);
-    return;
-  }
+  if (res.error){ alert(res.error.message); return; }
   closeModal();
 };
 
@@ -285,13 +281,12 @@ deleteBtn.onclick = async ()=>{
 function setupRealtime(){
   supabase
     .channel('bookings-rt')
-    .on(
-      'postgres_changes',
-      { event:'*', schema:'public', table:'bookings' },
-      ()=> loadAll()
-    )
+    .on('postgres_changes',
+        { event:'*', schema:'public', table:'bookings' },
+        ()=> loadAll())
     .subscribe();
 }
 </script>
+
 </body>
 </html>
