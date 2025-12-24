@@ -1,37 +1,190 @@
-*{box-sizing:border-box}
-body{margin:0;font-family:system-ui;background:#fff;color:#111}
+/* =====================================================
+   GLOBAL
+===================================================== */
+*{
+  box-sizing:border-box;
+}
 
-/* ===== TOP ===== */
-.topbar{padding:8px;border-bottom:1px solid #e5e5e5;display:flex;gap:10px;align-items:center;overflow-x:auto}
-.topbar input{padding:4px 6px;font-size:14px}
+body{
+  margin:0;
+  font-family:system-ui, -apple-system, BlinkMacSystemFont;
+  background:#faf7f2;          /* IG 米色 */
+  color:#111;
+}
 
-/* ===== LEGEND ===== */
-.legend{display:flex;gap:6px;font-size:12px;white-space:nowrap}
-.legend-item{display:flex;align-items:center;gap:4px;padding:4px 6px;border-radius:6px;cursor:pointer}
-.legend-item.active{background:#eee}
-.legend-color{width:10px;height:10px;border-radius:3px}
+/* =====================================================
+   TOP BAR
+===================================================== */
+.topbar{
+  padding:8px;
+  border-bottom:1px solid #e5e5e5;
+  display:flex;
+  gap:10px;
+  align-items:center;
+  overflow-x:auto;
+  background:#faf7f2;
+}
 
-/* ===== GRID ===== */
-.header,.row{display:grid}
+.topbar input{
+  padding:4px 6px;
+  font-size:14px;
+}
 
-/* ===== Y AXIS ===== */
-.room{width:88px;padding:6px;font-size:12px;background:#fafafa;border-right:1px solid #e5e5e5;position:sticky;left:0;z-index:3}
-.header .room{background:#f5f5f5;z-index:4}
+/* =====================================================
+   LEGEND
+===================================================== */
+.legend{
+  display:flex;
+  gap:6px;
+  font-size:12px;
+  white-space:nowrap;
+  overflow-x:auto;
+  -webkit-overflow-scrolling:touch;
+}
 
-/* ===== CORNER ===== */
-.corner{position:relative;width:88px;height:34px;background:#f5f5f5;color:#777;font-size:10px}
-.corner::before{content:"";position:absolute;inset:0;background:linear-gradient(45deg,transparent 49.5%,#d0d0d0 50%,transparent 50.5%)}
-.corner-date{position:absolute;top:4px;left:6px}
-.corner-room{position:absolute;bottom:4px;right:6px}
+.legend-item{
+  display:flex;
+  align-items:center;
+  gap:4px;
+  padding:4px 6px;
+  border-radius:6px;
+  cursor:pointer;
+}
 
-/* ===== CELL ===== */
-.cell{height:34px;border:1px solid #eee;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:12px}
-.cell.selecting{background:rgba(255,56,92,.3)}
+.legend-item.active{
+  background:#eee;
+}
 
-/* ===== BAR ===== */
-.bar{height:34px;color:#fff;font-size:12px;display:flex;align-items:center;justify-content:center;border-radius:4px;cursor:pointer}
+.legend-color{
+  width:10px;
+  height:10px;
+  border-radius:3px;
+}
 
-/* ===== COLORS ===== */
+/* =====================================================
+   CALENDAR LAYOUT (NO OVERLAP GUARANTEED)
+===================================================== */
+#calendar-container{
+  display:flex;
+  width:100%;
+  overflow:hidden;
+}
+
+/* Y AXIS PLACEHOLDER (STRUCTURAL COLUMN) */
+#calendar-y{
+  width:88px;
+  flex-shrink:0;
+}
+
+/* X AXIS (ONLY SCROLLABLE AREA) */
+#calendar-x{
+  overflow-x:auto;
+  overflow-y:hidden;
+  -webkit-overflow-scrolling:touch;
+  overscroll-behavior-x:contain;
+  touch-action:pan-x;
+}
+
+/* Calendar content must exceed width */
+#app{
+  min-width:fit-content;
+}
+
+/* =====================================================
+   GRID
+===================================================== */
+.header,
+.row{
+  display:grid;
+}
+
+/* =====================================================
+   Y AXIS (ROOM / DATE)
+===================================================== */
+.room{
+  width:88px;
+  padding:6px;
+  font-size:12px;
+  background:#fdfcf9;
+  border-right:1px solid #e5e5e5;
+}
+
+/* HEADER ROOM CELL */
+.header .room{
+  background:#f3f1ec;
+}
+
+/* =====================================================
+   CORNER CELL
+===================================================== */
+.corner{
+  position:relative;
+  width:88px;
+  height:34px;
+  background:#f3f1ec;
+  color:#777;
+  font-size:10px;
+}
+
+.corner::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  background:linear-gradient(
+    45deg,
+    transparent 49.5%,
+    #d0d0d0 50%,
+    transparent 50.5%
+  );
+}
+
+.corner-date{
+  position:absolute;
+  top:4px;
+  left:6px;
+}
+
+.corner-room{
+  position:absolute;
+  bottom:4px;
+  right:6px;
+}
+
+/* =====================================================
+   CELL
+===================================================== */
+.cell{
+  height:34px;
+  border:1px solid #eee;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:12px;
+  background:#fff;
+}
+
+.cell.selecting{
+  background:rgba(255,56,92,.25);
+}
+
+/* =====================================================
+   BAR
+===================================================== */
+.bar{
+  height:34px;
+  color:#fff;
+  font-size:12px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border-radius:4px;
+  cursor:pointer;
+}
+
+/* =====================================================
+   SOURCE COLORS
+===================================================== */
 .src-airbnb{background:#ff385c}
 .src-booking{background:#003580}
 .src-agoda{background:#e60023}
@@ -40,123 +193,70 @@ body{margin:0;font-family:system-ui;background:#fff;color:#111}
 .src-walkinwayne{background:#2e8b57}
 .src-walkinsoo{background:#8b4513}
 
-/* ===== SUMMARY ===== */
-#summary{border-top:1px solid #eee;padding:10px;font-size:13px}
-.summary-title{font-weight:600;margin:6px 0 4px}
-.summary-row{display:flex;justify-content:space-between;padding:4px 0;cursor:pointer}
-.summary-row:hover{background:#f6f6f6}
-
-/* ===== MODAL ===== */
-.modal{position:fixed;inset:0;background:rgba(0,0,0,.35);display:none;z-index:999}
-.modal-box{background:#fff;border-radius:14px 14px 0 0;padding:10px 12px;position:absolute;bottom:0;left:0;right:0}
-.modal-box input,.modal-box select{width:100%;height:36px;margin:4px 0;font-size:14px}
-.actions{display:flex;gap:8px}
-.actions button{flex:1}
-#saveBtn:disabled{opacity:.4}
-
-body{
-  background:#faf7f2; /* 浅米色 */
-}
-
-.topbar{
-  position:fixed;
-  top:0;
-  left:0;
-  right:0;
-  z-index:100;
+/* =====================================================
+   SUMMARY (NORMAL FLOW, NO OVERLAP)
+===================================================== */
+#summary{
+  border-top:1px solid #e5e5e5;
+  padding:10px;
+  font-size:13px;
   background:#faf7f2;
 }
 
-#summary{
+.summary-title{
+  font-weight:600;
+  margin:6px 0 4px;
+}
+
+.summary-row{
+  display:flex;
+  justify-content:space-between;
+  padding:4px 0;
+  cursor:pointer;
+}
+
+.summary-row:hover{
+  background:#f1eee9;
+}
+
+/* =====================================================
+   MODAL
+===================================================== */
+.modal{
   position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.35);
+  display:none;
+  z-index:999;
+}
+
+.modal-box{
+  background:#fff;
+  border-radius:14px 14px 0 0;
+  padding:10px 12px;
+  position:absolute;
   bottom:0;
   left:0;
   right:0;
-  background:#faf7f2;
-  z-index:100;
-  max-height:30vh;
-  overflow-y:auto; /* 如果内容很多，只在 summary 内滚 */
 }
 
-#calendar-wrap{
-  position:relative;
-  margin-top:48px;    /* 给 topbar 留空间 */
-  margin-bottom:140px;/* 给 summary 留空间 */
-  overflow-x:auto;    /* 只允许横向滑 */
-  overflow-y:hidden;
-}
-
-#app{
-  min-width:fit-content;
-}
-
-.header{
-  position:sticky;
-  top:48px; /* 紧贴 topbar 下方 */
-  z-index:10;
-  background:#faf7f2;
-}
-
-#calendar-wrap{
-  -webkit-overflow-scrolling: touch; /* iOS momentum */
-  overscroll-behavior-x: contain;    /* 防止整页被拖走 */
-  touch-action: pan-x;               /* 只允许横向滑 */
-}
-
-#summary{
-  -webkit-overflow-scrolling: touch;
-  overscroll-behavior-y: contain;
-}
-
-.legend{
-  -webkit-overflow-scrolling: touch;
-  overscroll-behavior-x: contain;
-  touch-action: pan-x;
-}
-
-.cell,
-.bar,
-.legend-item{
-  touch-action: manipulation;
-}
-
-#calendar-wrap::-webkit-scrollbar{
-  display:none; /* iOS 原生没有 scrollbar */
-}
-
-#calendar-wrap{
-  display:flex;
+.modal-box input,
+.modal-box select{
   width:100%;
-  overflow:hidden;
+  height:36px;
+  margin:4px 0;
+  font-size:14px;
 }
 
-#calendar-y{
-  width:88px;           /* 和 .room 一致 */
-  flex-shrink:0;
+.actions{
+  display:flex;
+  gap:8px;
 }
 
-#calendar-x{
-  overflow-x:auto;
-  overflow-y:hidden;
-  -webkit-overflow-scrolling: touch;
-  overscroll-behavior-x: contain;
-  touch-action: pan-x;
+.actions button{
+  flex:1;
 }
 
-#app{
-  min-width:fit-content;
+#saveBtn:disabled{
+  opacity:.4;
 }
-
-.header{
-  position:sticky;
-  top:48px;             /* topbar 高度 */
-  z-index:5;
-  background:#faf7f2;
-}
-
-.room{
-  position:sticky;
-  left:0;
-  z-index:6; /* 一定要比 header 高 */
-}
-
