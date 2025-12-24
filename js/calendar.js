@@ -27,7 +27,6 @@ var DAYS = [];
 
 var FILTER = {};
 var selectState = null;
-var editing = null;
 
 /* =======================
    DOM
@@ -69,7 +68,6 @@ async function loadAll(){
     ROOMS = r1.data || [];
     BOOKINGS = r2.data || [];
   }catch(e){
-    alert('Network error. Please refresh.');
     return;
   }
 
@@ -81,7 +79,6 @@ async function loadAll(){
   buildDays();
   buildSelects();
   render();
-  renderSummary();
 }
 
 /* =======================
@@ -158,12 +155,13 @@ function buildDays(){
 }
 
 /* =======================
-   RENDER
+   RENDER (SAFE FOR iOS)
 ======================= */
 function render(){
   var html = '';
   var cols = '88px repeat('+DAYS.length+',56px)';
 
+  // HEADER
   html += '<div class="header" style="grid-template-columns:'+cols+'">';
   html += '<div class="room corner">' +
           '<span class="corner-room">Room</span>' +
@@ -175,6 +173,7 @@ function render(){
   }
   html += '</div>';
 
+  // ROWS
   for(var r=0;r<ROOMS.length;r++){
     html += '<div class="row" style="grid-template-columns:'+cols+'">';
     html += '<div class="room">'+ROOMS[r].name+'</div>';
@@ -187,6 +186,7 @@ function render(){
       for(var b=0;b<BOOKINGS.length;b++){
         var bk = BOOKINGS[b];
         if(bk.room===ROOMS[r].name &&
+           bk.check_in && bk.check_out &&
            day>=bk.check_in && day<bk.check_out &&
            (!Object.keys(FILTER).length || FILTER[bk.source])){
           found = bk;
@@ -195,16 +195,18 @@ function render(){
       }
 
       if(!found){
-        html += '<div class="cell" data-room="'+ROOMS[r].name+
-                '" data-date="'+day+'"></div>';
+        html += '<div class="cell"></div>';
         i++;
       }else{
-        var span =
-          (new Date(found.check_out)-new Date(day))/86400000;
+        // 🔥 iOS SAFE date diff
+        var co = Date.parse(found.check_out);
+        var ci = Date.parse(day);
+        var span = Math.max(1, Math.round((co - ci) / 86400000));
+
         html += '<div class="bar src-'+norm(found.source)+
                 '" style="grid-column:span '+span+'">'+
                 (found.price||'')+'</div>';
-        i+=span;
+        i += span;
       }
     }
 
@@ -213,93 +215,3 @@ function render(){
 
   app.innerHTML = html;
 }
-
-/* =======================
-   CLICK (NO closest)
-======================= */
-app.onclick = function(e){
-  var el = e.target;
-  while(el && el!==app){
-    if(el.className && el.className.indexOf('cell')!==-1){
-      onCellClick(el);
-      return;
-    }
-    el = el.parentNode;
-  }
-};
-
-/* =======================
-   CELL LOGIC
-======================= */
-function onCellClick(el){
-  var room = el.getAttribute('data-room');
-  var date = el.getAttribute('data-date');
-  if(!room || !date) return;
-
-  if(!selectState ||
-     selectState.room!==room ||
-     date<=selectState.checkin){
-    selectState = { room:room, checkin:date };
-    return;
-  }
-
-  openNew(room, selectState.checkin, date);
-  selectState = null;
-}
-
-/* =======================
-   MODAL
-======================= */
-function openNew(room,ci,co){
-  modalTitle.innerHTML = 'New Booking';
-  editing = null;
-
-  for(var i=0;i<ROOMS.length;i++){
-    if(ROOMS[i].name===room){
-      roomInput.value = ROOMS[i].id;
-      break;
-    }
-  }
-
-  checkinInput.value = ci;
-  checkoutInput.value = co;
-  priceInput.value = '';
-  remarkInput.value = '';
-  deleteBtn.style.display = 'none';
-
-  modal.style.display = 'block';
-}
-
-function closeModal(){
-  modal.style.display = 'none';
-}
-
-/* =======================
-   SAVE / DELETE
-======================= */
-saveBtn.onclick = async function(){
-  var payload = {
-    room_id: Number(roomInput.value),
-    check_in: checkinInput.value,
-    check_out: checkoutInput.value,
-    source: sourceInput.value,
-    price: Number(priceInput.value),
-    remark: remarkInput.value || null
-  };
-
-  if(editing){
-    await sb.from('bookings').update(payload).eq('id', editing.id);
-  }else{
-    await sb.from('bookings').insert(payload);
-  }
-
-  closeModal();
-  loadAll();
-};
-
-deleteBtn.onclick = async function(){
-  if(!editing) return;
-  await sb.from('bookings').delete().eq('id', editing.id);
-  closeModal();
-  loadAll();
-};
