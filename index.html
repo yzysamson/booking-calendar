@@ -16,7 +16,6 @@ body {
     -apple-system,
     BlinkMacSystemFont,
     "SF Pro Text",
-    "SF Pro Display",
     system-ui,
     Arial;
   background: #fff;
@@ -25,17 +24,16 @@ body {
 
 /* ===== TOP BAR ===== */
 .topbar {
-  padding: 10px 12px;
+  padding: 8px 10px;
   border-bottom: 1px solid #e5e5e5;
   display: flex;
+  gap: 10px;
   align-items: center;
-  gap: 12px;
   overflow-x: auto;
 }
-
 .topbar input[type="month"] {
   font-size: 14px;
-  padding: 6px 8px;
+  padding: 6px;
   flex-shrink: 0;
 }
 
@@ -43,34 +41,39 @@ body {
 .legend {
   display: flex;
   gap: 10px;
-  align-items: center;
   font-size: 12px;
   white-space: nowrap;
 }
-
 .legend-item {
   display: flex;
   align-items: center;
   gap: 4px;
 }
-
 .legend-color {
   width: 12px;
   height: 12px;
   border-radius: 3px;
 }
 
-/* ===== CALENDAR ===== */
-.wrapper { overflow-x: auto; }
+/* ===== SCROLL ===== */
+.scroll-x {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.calendar {
+  min-width: max-content;
+}
 
-.header, .row {
+/* ===== GRID ===== */
+.header,
+.row {
   display: grid;
   align-items: stretch;
 }
 
-/* ===== Y AXIS (ROOM) ===== */
+/* ===== Y AXIS ===== */
 .room {
-  width: 120px;
+  width: 110px;
   padding: 6px 8px;
   font-size: 13px;
   background: #fafafa;
@@ -86,31 +89,30 @@ body {
   z-index: 4;
 }
 
+/* corner */
+.corner {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  font-size: 11px;
+  color: #777;
+  line-height: 1.2;
+}
+
 /* ===== CELL ===== */
 .cell {
   width: 56px;
-  height: 32px;
-  line-height: 32px;
+  height: 36px;
+  line-height: 36px;
   text-align: center;
   font-size: 12px;
   border: 1px solid #eee;
 }
+.free { background: #fff8eb; }
+.booked { color: #fff; cursor: pointer; }
+.selecting { background: rgba(255,56,92,.25); }
 
-.free {
-  background: #fff8eb;
-  cursor: pointer;
-}
-.booked {
-  color: #fff;
-  cursor: pointer;
-}
-
-/* selecting hint */
-.selecting {
-  background: rgba(255, 56, 92, 0.25);
-}
-
-/* ===== SOURCE COLORS ===== */
+/* colors */
 .src-airbnb { background:#ff385c; }
 .src-booking { background:#003580; }
 .src-agoda { background:#e60023; }
@@ -144,10 +146,10 @@ body {
 .modal-box select,
 .modal-box button {
   width: 100%;
-  padding: 10px;
+  padding: 12px;
   margin: 6px 0;
-  font-size: 14px;
-  border-radius: 8px;
+  font-size: 15px;
+  border-radius: 10px;
   border: 1px solid #ddd;
 }
 .actions {
@@ -160,44 +162,32 @@ body {
 
 <body>
 
-<!-- ===== TOP BAR WITH LEGEND ===== -->
+<!-- TOP BAR -->
 <div class="topbar">
   <input type="month" id="monthPicker">
-
   <div class="legend">
-    <div class="legend-item">
-      <span class="legend-color src-airbnb"></span> Airbnb
-    </div>
-    <div class="legend-item">
-      <span class="legend-color src-booking"></span> Booking
-    </div>
-    <div class="legend-item">
-      <span class="legend-color src-agoda"></span> Agoda
-    </div>
-    <div class="legend-item">
-      <span class="legend-color src-trip"></span> Trip
-    </div>
-    <div class="legend-item">
-      <span class="legend-color src-slh"></span> SLH
-    </div>
-    <div class="legend-item">
-      <span class="legend-color src-walkinwayne"></span> Walk-in (Wayne)
-    </div>
-    <div class="legend-item">
-      <span class="legend-color src-walkinsoo"></span> Walk-in (Soo)
-    </div>
+    <div class="legend-item"><span class="legend-color src-airbnb"></span>Airbnb</div>
+    <div class="legend-item"><span class="legend-color src-booking"></span>Booking</div>
+    <div class="legend-item"><span class="legend-color src-agoda"></span>Agoda</div>
+    <div class="legend-item"><span class="legend-color src-trip"></span>Trip</div>
+    <div class="legend-item"><span class="legend-color src-slh"></span>SLH</div>
+    <div class="legend-item"><span class="legend-color src-walkinwayne"></span>Wayne</div>
+    <div class="legend-item"><span class="legend-color src-walkinsoo"></span>Soo</div>
   </div>
 </div>
 
-<div class="wrapper" id="app"></div>
+<!-- CALENDAR -->
+<div class="scroll-x">
+  <div class="calendar" id="app"></div>
+</div>
 
-<!-- ===== MODAL ===== -->
+<!-- MODAL -->
 <div class="modal" id="modal">
   <div class="modal-box">
     <h3 id="modalTitle">Booking</h3>
 
     <label>Room</label>
-    <input id="roomInput">
+    <select id="roomSelect"></select>
 
     <label>Check-in</label>
     <input type="date" id="checkInInput">
@@ -226,9 +216,10 @@ body {
 
 <script>
 /* ===== CONFIG ===== */
-const SUPABASE_URL = 'https://pwscsukxfnbzjciuhtwl.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3c2NzdWt4Zm5iempjaXVodHdsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY1MzU1MDQsImV4cCI6MjA4MjExMTUwNH0.YQEXs1S3wprPMOarCL_DLXDtsSgY6I7TFM4bp_gLkW8';
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const sb = supabase.createClient(
+  'https://pwscsukxfnbzjciuhtwl.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3c2NzdWt4Zm5iempjaXVodHdsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY1MzU1MDQsImV4cCI6MjA4MjExMTUwNH0.YQEXs1S3wprPMOarCL_DLXDtsSgY6I7TFM4bp_gLkW8'
+);
 
 /* ===== STATE ===== */
 let ROOMS=[], BOOKINGS=[], DAYS=[];
@@ -240,7 +231,7 @@ const app=document.getElementById('app');
 const monthPicker=document.getElementById('monthPicker');
 const modal=document.getElementById('modal');
 const modalTitle=document.getElementById('modalTitle');
-const roomInput=document.getElementById('roomInput');
+const roomSelect=document.getElementById('roomSelect');
 const checkInInput=document.getElementById('checkInInput');
 const checkOutInput=document.getElementById('checkOutInput');
 const sourceInput=document.getElementById('sourceInput');
@@ -251,14 +242,24 @@ const deleteBtn=document.getElementById('deleteBtn');
 monthPicker.value=new Date().toISOString().slice(0,7);
 monthPicker.onchange=loadAll;
 loadAll();
-setupRealtime();
 
 /* ===== LOAD ===== */
 async function loadAll(){
   ROOMS=(await sb.from('rooms').select('*').order('id')).data||[];
   BOOKINGS=(await sb.from('booking_view').select('*')).data||[];
   buildDays();
+  buildRoomOptions();
   render();
+}
+
+function buildRoomOptions(){
+  roomSelect.innerHTML='';
+  ROOMS.forEach(r=>{
+    const o=document.createElement('option');
+    o.value=r.id;
+    o.textContent=r.name;
+    roomSelect.appendChild(o);
+  });
 }
 
 function buildDays(){
@@ -273,8 +274,6 @@ function isBooked(room,day){
 
 /* ===== CLICK ===== */
 function clickFree(room,day,cell){
-  if (isBooked(room,day)) return;
-
   document.querySelectorAll('.selecting').forEach(c=>c.classList.remove('selecting'));
 
   if (SELECT_STEP===0){
@@ -284,19 +283,24 @@ function clickFree(room,day,cell){
     cell.classList.add('selecting');
   } else {
     SELECT_STEP=0;
-    openNew(room,START_DAY,day);
+    openNew(room,START_DAY);
   }
 }
 
 /* ===== RENDER ===== */
 function render(){
   app.innerHTML='';
-  const cols=`120px repeat(${DAYS.length},56px)`;
+  const cols=`110px repeat(${DAYS.length},56px)`;
 
   const header=document.createElement('div');
   header.className='header';
   header.style.gridTemplateColumns=cols;
-  header.appendChild(Object.assign(document.createElement('div'),{className:'room'}));
+
+  const corner=document.createElement('div');
+  corner.className='room corner';
+  corner.innerHTML='<span>Room</span><span>Date →</span>';
+  header.appendChild(corner);
+
   DAYS.forEach(d=>{
     const c=document.createElement('div');
     c.className='cell';
@@ -332,12 +336,12 @@ function render(){
 }
 
 /* ===== MODAL ===== */
-function openNew(room,start,end){
+function openNew(room,start){
   EDITING=null;
   modalTitle.textContent='New Booking';
 
-  roomInput.value=room;
-  roomInput.disabled=true;
+  roomSelect.value=ROOMS.find(r=>r.name===room).id;
+  roomSelect.disabled=true;
 
   checkInInput.value=start;
   checkInInput.disabled=true;
@@ -356,8 +360,9 @@ function openEdit(b){
   EDITING=b;
   modalTitle.textContent='Edit Booking';
 
-  roomInput.value=b.room;
-  roomInput.disabled=false;
+  roomSelect.value=b.room_id;
+  roomSelect.disabled=false;
+
   checkInInput.value=b.check_in;
   checkInInput.disabled=false;
   checkOutInput.value=b.check_out;
@@ -380,13 +385,14 @@ saveBtn.onclick=async()=>{
     alert('Checkout must be at least 1 day after check-in');
     return;
   }
-  const room=ROOMS.find(r=>r.name===roomInput.value);
+
   const payload={
-    room_id:room.id,
+    room_id:parseInt(roomSelect.value,10),
     check_in:checkInInput.value,
     check_out:checkOutInput.value,
     source:sourceInput.value
   };
+
   let res;
   if (EDITING){
     res=await sb.from('bookings').update(payload).eq('id',EDITING.id);
@@ -394,22 +400,15 @@ saveBtn.onclick=async()=>{
     res=await sb.from('bookings').insert(payload);
   }
   if (res.error){ alert(res.error.message); return; }
-  closeModal();
+  closeModal(); loadAll();
 };
 
 deleteBtn.onclick=async()=>{
   if (!EDITING) return;
   if (!confirm('Delete booking?')) return;
   await sb.from('bookings').delete().eq('id',EDITING.id);
-  closeModal();
+  closeModal(); loadAll();
 };
-
-/* ===== REALTIME ===== */
-function setupRealtime(){
-  sb.channel('rt-bookings')
-    .on('postgres_changes',{event:'*',schema:'public',table:'bookings'},loadAll)
-    .subscribe();
-}
 </script>
 
 </body>
