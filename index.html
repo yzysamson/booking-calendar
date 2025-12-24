@@ -12,7 +12,7 @@ body{margin:0;font-family:system-ui;background:#fff;color:#111}
 
 /* ===== TOP ===== */
 .topbar{
-  padding:6px 8px;
+  padding:8px;
   border-bottom:1px solid #e5e5e5;
   display:flex;
   gap:10px;
@@ -25,10 +25,18 @@ body{margin:0;font-family:system-ui;background:#fff;color:#111}
 .legend{display:flex;gap:6px;font-size:12px;white-space:nowrap}
 .legend-item{
   display:flex;align-items:center;gap:4px;
-  padding:3px 6px;border-radius:6px;cursor:pointer
+  padding:4px 6px;border-radius:6px;cursor:pointer
 }
 .legend-item.active{background:#eee}
 .legend-color{width:10px;height:10px;border-radius:3px}
+
+/* ===== SUMMARY ===== */
+#summary{padding:8px;border-bottom:1px solid #eee;font-size:13px}
+.summary-title{font-weight:600;margin-top:6px}
+.summary-row{
+  display:flex;justify-content:space-between;
+  padding:4px 0
+}
 
 /* ===== GRID ===== */
 .header,.row{display:grid}
@@ -72,16 +80,8 @@ body{margin:0;font-family:system-ui;background:#fff;color:#111}
   cursor:pointer;
 }
 
-/* selecting animation */
-@keyframes iosPulse{
-  0%{opacity:.25}
-  50%{opacity:.45}
-  100%{opacity:.25}
-}
-.cell.selecting{
-  background:rgba(255,56,92,.35);
-  animation:iosPulse 1.2s ease-in-out infinite;
-}
+/* selecting */
+.cell.selecting{background:rgba(255,56,92,.3)}
 
 /* ===== BAR ===== */
 .bar{
@@ -139,7 +139,9 @@ body{margin:0;font-family:system-ui;background:#fff;color:#111}
   <div class="legend" id="legend"></div>
 </div>
 
-<div class="calendar" id="app"></div>
+<div id="summary"></div>
+
+<div id="app"></div>
 
 <!-- MODAL -->
 <div class="modal" id="modal">
@@ -166,16 +168,15 @@ body{margin:0;font-family:system-ui;background:#fff;color:#111}
 
     <div class="actions">
       <button id="saveBtn" disabled>Save</button>
+      <button id="deleteBtn" style="display:none">Delete</button>
       <button onclick="closeModal()">Cancel</button>
     </div>
   </div>
 </div>
 
 <script>
-/* ===== UTIL (FIXED) ===== */
-function norm(s){
-  return s.toLowerCase().replace(/[^a-z]/g,'');
-}
+/* ===== UTIL ===== */
+function norm(s){return s.toLowerCase().replace(/[^a-z]/g,'')}
 
 /* ===== SUPABASE ===== */
 const sb = supabase.createClient(
@@ -189,11 +190,17 @@ const SOURCES=[
 ];
 
 let ROOMS=[],BOOKINGS=[],DAYS=[];
+let FILTER=new Set();
 let selectState=null;
+let editing=null;
 
+/* ===== DOM ===== */
 const app=document.getElementById('app');
+const legend=document.getElementById('legend');
+const summary=document.getElementById('summary');
 const modal=document.getElementById('modal');
 const saveBtn=document.getElementById('saveBtn');
+const deleteBtn=document.getElementById('deleteBtn');
 
 const roomInput=document.getElementById('roomInput');
 const checkinInput=document.getElementById('checkinInput');
@@ -201,18 +208,77 @@ const checkoutInput=document.getElementById('checkoutInput');
 const sourceInput=document.getElementById('sourceInput');
 const priceInput=document.getElementById('priceInput');
 const remarkInput=document.getElementById('remarkInput');
+const modalTitle=document.getElementById('modalTitle');
 const monthPicker=document.getElementById('monthPicker');
 
 monthPicker.value=new Date().toISOString().slice(0,7);
 monthPicker.onchange=loadAll;
 loadAll();
 
+/* ===== LOAD ===== */
 async function loadAll(){
   ROOMS=(await sb.from('rooms').select('*').order('id')).data||[];
   BOOKINGS=(await sb.from('booking_view').select('*')).data||[];
-  buildDays();buildSelects();render();
+  buildLegend();buildDays();buildSelects();
+  render();renderSummary();
 }
 
+/* ===== LEGEND ===== */
+function buildLegend(){
+  legend.innerHTML='';
+  const all=document.createElement('div');
+  all.className='legend-item active';
+  all.textContent='All';
+  all.onclick=()=>{FILTER.clear();render()};
+  legend.appendChild(all);
+
+  SOURCES.forEach(s=>{
+    const el=document.createElement('div');
+    el.className='legend-item';
+    el.innerHTML=`<span class="legend-color src-${norm(s)}"></span>${s}`;
+    el.onclick=()=>{
+      FILTER.has(s)?FILTER.delete(s):FILTER.add(s);
+      el.classList.toggle('active');
+      render();
+    };
+    legend.appendChild(el);
+  });
+}
+
+/* ===== SUMMARY (FRONTEND) ===== */
+function renderSummary(){
+  const [y,m]=monthPicker.value.split('-').map(Number);
+  let byRoom={},bySource={};
+
+  BOOKINGS.forEach(b=>{
+    const d=new Date(b.check_in);
+    if(d.getFullYear()!==y||d.getMonth()+1!==m) return;
+
+    byRoom[b.room]=(byRoom[b.room]||{c:0,s:0});
+    byRoom[b.room].c++;
+    byRoom[b.room].s+=Number(b.price||0);
+
+    bySource[b.source]=(bySource[b.source]||{c:0,s:0});
+    bySource[b.source].c++;
+    bySource[b.source].s+=Number(b.price||0);
+  });
+
+  summary.innerHTML='<div class="summary-title">By Room</div>';
+  Object.keys(byRoom).forEach(r=>{
+    summary.innerHTML+=`<div class="summary-row">
+      <div>${r} (${byRoom[r].c})</div><div>RM ${byRoom[r].s}</div>
+    </div>`;
+  });
+
+  summary.innerHTML+='<div class="summary-title">By Source</div>';
+  Object.keys(bySource).forEach(s=>{
+    summary.innerHTML+=`<div class="summary-row">
+      <div>${s} (${bySource[s].c})</div><div>RM ${bySource[s].s}</div>
+    </div>`;
+  });
+}
+
+/* ===== CALENDAR ===== */
 function buildSelects(){
   roomInput.innerHTML='';
   ROOMS.forEach(r=>roomInput.innerHTML+=`<option value="${r.id}">${r.name}</option>`);
@@ -241,50 +307,69 @@ function render(){
   ROOMS.forEach(r=>{
     html+=`<div class="row" style="grid-template-columns:${cols}">
       <div class="room">${r.name}</div>`;
-
     let i=0;
     while(i<DAYS.length){
       const d=DAYS[i];
-      const b=BOOKINGS.find(x=>x.room===r.name && d>=x.check_in && d<x.check_out);
+      const b=BOOKINGS.find(x=>
+        x.room===r.name &&
+        d>=x.check_in && d<x.check_out &&
+        (FILTER.size===0||FILTER.has(x.source))
+      );
       if(!b){
         html+=`<div class="cell" data-room="${r.name}" data-date="${d}"
-               onclick="onCellClick(this)"></div>`;
+          onclick="onCellClick(this)"></div>`;
         i++;continue;
       }
       const span=(new Date(b.check_out)-new Date(d))/86400000;
       html+=`<div class="bar src-${norm(b.source)}"
-               style="grid-column:span ${span}">${b.price||''}</div>`;
+        style="grid-column:span ${span}"
+        onclick="openEdit(${b.id})">${b.price||''}</div>`;
       i+=span;
     }
     html+=`</div>`;
   });
-
   app.innerHTML=html;
 }
 
+/* ===== CLICK ===== */
 function onCellClick(el){
   const room=el.dataset.room;
   const date=el.dataset.date;
+  document.querySelectorAll('.cell.selecting').forEach(c=>c.classList.remove('selecting'));
 
-  document.querySelectorAll('.cell.selecting')
-    .forEach(c=>c.classList.remove('selecting'));
-
-  if(!selectState || selectState.room!==room || date<=selectState.checkin){
+  if(!selectState||selectState.room!==room||date<=selectState.checkin){
     selectState={room,checkin:date};
-    el.classList.add('selecting');
-    return;
+    el.classList.add('selecting');return;
   }
-
   openNew(room,selectState.checkin,date);
   selectState=null;
 }
 
+/* ===== MODAL ===== */
 function openNew(room,ci,co){
+  modalTitle.textContent='New Booking';
+  editing=null;
   roomInput.value=ROOMS.find(r=>r.name===room).id;
   checkinInput.value=ci;
   checkoutInput.value=co;
   priceInput.value='';
+  remarkInput.value='';
   saveBtn.disabled=true;
+  deleteBtn.style.display='none';
+  modal.style.display='block';
+}
+
+function openEdit(id){
+  editing=BOOKINGS.find(b=>b.id===id);
+  modalTitle.textContent='Edit Booking';
+  roomInput.value=editing.room_id;
+  checkinInput.value=editing.check_in;
+  checkoutInput.value=editing.check_out;
+  sourceInput.value=editing.source;
+  priceInput.value=editing.price||'';
+  remarkInput.value=editing.remark||'';
+  deleteBtn.style.display='block';
+  validate();
   modal.style.display='block';
 }
 
@@ -295,6 +380,28 @@ function validate(){
 }
 checkoutInput.onchange=validate;
 priceInput.oninput=validate;
+
+/* ===== SAVE / DELETE ===== */
+saveBtn.onclick=async()=>{
+  if(saveBtn.disabled) return;
+  const payload={
+    room_id:+roomInput.value,
+    check_in:checkinInput.value,
+    check_out:checkoutInput.value,
+    source:sourceInput.value,
+    price:Number(priceInput.value),
+    remark:remarkInput.value||null
+  };
+  editing
+    ? await sb.from('bookings').update(payload).eq('id',editing.id)
+    : await sb.from('bookings').insert(payload);
+  closeModal();loadAll();
+};
+
+deleteBtn.onclick=async()=>{
+  await sb.from('bookings').delete().eq('id',editing.id);
+  closeModal();loadAll();
+};
 </script>
 
 </body>
