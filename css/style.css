@@ -259,7 +259,7 @@ html, body{
 /* ========== MAIN SCREEN ========== */
 .screen{
   position:fixed;
-  top:calc(var(--topbar-h) + 12px);  /* 👈 往下推一点 */
+  top:calc(var(--topbar-h) + 20px);  /* 👈 往下推一点 */
   bottom:var(--summary-h);
   left:0;
   right:0;
