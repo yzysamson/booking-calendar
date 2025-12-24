@@ -263,3 +263,92 @@ body{
 #saveBtn:disabled{
   opacity:.4;
 }
+
+/* =========================
+   CALENDAR SCROLL CONTAINER
+========================= */
+#calendar-scroll{
+  overflow-x:auto;              /* 横向滑 */
+  overflow-y:visible;           /* 纵向自然 */
+  -webkit-overflow-scrolling:touch;
+  padding-top:56px;             /* 给 topbar 让位 */
+}
+
+/* =========================
+   GRID
+========================= */
+.header,
+.row{
+  display:grid;
+}
+
+/* =========================
+   FREEZE: DATE HEADER (TOP)
+========================= */
+.header{
+  position:sticky;
+  top:56px;                     /* 紧贴 topbar 下方 */
+  z-index:20;
+  background:#faf7f2;
+}
+
+/* =========================
+   FREEZE: ROOM COLUMN (LEFT)
+========================= */
+.room{
+  position:sticky;
+  left:0;
+  z-index:10;
+  background:#fdfcf9;
+  width:88px;
+  border-right:1px solid #e5e5e5;
+}
+
+/* =========================
+   FREEZE: TOP-LEFT CORNER
+========================= */
+.header .room{
+  z-index:30;                   /* 永远在最上 */
+  background:#f3f1ec;
+}
+
+/* =========================
+   X AXIS CONTENT
+========================= */
+#app{
+  min-width:fit-content;        /* 允许横向展开 */
+}
+
+/* =========================
+   CELLS
+========================= */
+.cell{
+  height:34px;
+  border:1px solid #eee;
+  background:#fff;
+}
+
+.cell.selecting{
+  background:rgba(255,56,92,.25);
+}
+
+/* =========================
+   BAR
+========================= */
+.bar{
+  height:34px;
+  border-radius:4px;
+  color:#fff;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+
+/* =========================
+   SUMMARY (NORMAL FLOW)
+========================= */
+#summary{
+  margin-top:12px;
+  padding:10px;
+  background:#faf7f2;
+}
