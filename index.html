@@ -28,10 +28,6 @@ body {
   padding: 10px 12px;
   border-bottom: 1px solid #e5e5e5;
 }
-.topbar input {
-  font-size: 14px;
-  padding: 6px 8px;
-}
 
 /* ===== CALENDAR ===== */
 .wrapper { overflow-x: auto; }
@@ -41,9 +37,9 @@ body {
   grid-auto-columns: 56px;
 }
 
-/* Sticky Y */
+/* Sticky Y axis */
 .room {
-  width: 150px;
+  width: 120px;               /* 👈 调窄 */
   padding: 6px 8px;
   font-size: 13px;
   background: #fafafa;
@@ -75,7 +71,12 @@ body {
   cursor: pointer;
 }
 
-/* Colors */
+/* 👉 第一次点的淡红提示 */
+.selecting {
+  background: rgba(255, 56, 92, 0.25);
+}
+
+/* booking colors */
 .src-airbnb { background:#ff385c; }
 .src-booking { background:#003580; }
 .src-agoda { background:#e60023; }
@@ -131,6 +132,7 @@ body {
 
 <div class="wrapper" id="app"></div>
 
+<!-- Modal -->
 <div class="modal" id="modal">
   <div class="modal-box">
     <h3 id="modalTitle">Booking</h3>
@@ -171,8 +173,11 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 /* ===== STATE ===== */
 let ROOMS=[], BOOKINGS=[], DAYS=[];
-let SELECT_STEP=0, START_DAY=null;
-let EDITING=null;
+let SELECT_STEP = 0;
+let START_DAY = null;
+let START_ROOM = null;
+let START_CELL = null;
+let EDITING = null;
 
 /* ===== DOM ===== */
 const app = document.getElementById('app');
@@ -210,21 +215,32 @@ function isBooked(room, day) {
   return BOOKINGS.some(b => b.room === room && day >= b.check_in && day < b.check_out);
 }
 
-function isValidDateRange(ci, co) {
-  return new Date(co) > new Date(ci);
-}
-
-/* ===== CLICK ===== */
-function clickFree(room, day) {
+/* ===== CLICK LOGIC ===== */
+function clickFree(room, day, cell) {
   if (isBooked(room, day)) return;
+
+  // 第二次但点了别的 room → reset 成第一次
+  if (SELECT_STEP === 1 && room !== START_ROOM) {
+    clearSelecting();
+    SELECT_STEP = 0;
+  }
 
   if (SELECT_STEP === 0) {
     START_DAY = day;
+    START_ROOM = room;
+    START_CELL = cell;
     SELECT_STEP = 1;
+    cell.classList.add('selecting');
   } else {
+    clearSelecting();
     SELECT_STEP = 0;
     openNew(room, START_DAY, day);
   }
+}
+
+function clearSelecting() {
+  document.querySelectorAll('.selecting')
+    .forEach(c => c.classList.remove('selecting'));
 }
 
 /* ===== RENDER ===== */
@@ -259,7 +275,7 @@ function render() {
         cell.onclick=()=>openEdit(b);
       } else {
         cell.className='cell free';
-        cell.onclick=()=>clickFree(r.name,d);
+        cell.onclick=()=>clickFree(r.name, d, cell);
       }
       row.appendChild(cell);
     });
@@ -268,81 +284,85 @@ function render() {
 }
 
 /* ===== MODAL ===== */
-function openNew(room,start,end){
-  EDITING=null;
-  modalTitle.textContent='New Booking';
+function openNew(room, start, end) {
+  EDITING = null;
+  modalTitle.textContent = 'New Booking';
 
-  roomInput.value=room;
-  roomInput.disabled=true;
+  roomInput.value = room;
+  roomInput.disabled = true;
 
-  checkInInput.value=start;
-  checkInInput.disabled=true;
+  checkInInput.value = start;
+  checkInInput.disabled = true;
 
-  const d=new Date(start);
-  d.setDate(d.getDate()+1);
-  checkOutInput.value=d.toISOString().slice(0,10);
-  checkOutInput.disabled=false;
+  const d = new Date(start);
+  d.setDate(d.getDate() + 1);
+  checkOutInput.value = d.toISOString().slice(0,10);
+  checkOutInput.disabled = false;
 
-  saveBtn.textContent='Save';
-  deleteBtn.style.display='none';
-  modal.style.display='block';
+  saveBtn.textContent = 'Save';
+  deleteBtn.style.display = 'none';
+  modal.style.display = 'block';
 }
 
-function openEdit(b){
-  EDITING=b;
-  modalTitle.textContent='Edit Booking';
+function openEdit(b) {
+  EDITING = b;
+  modalTitle.textContent = 'Edit Booking';
 
-  roomInput.value=b.room;
-  roomInput.disabled=false;
-  checkInInput.value=b.check_in;
-  checkInInput.disabled=false;
-  checkOutInput.value=b.check_out;
-  checkOutInput.disabled=false;
-  sourceInput.value=b.source;
+  roomInput.value = b.room;
+  roomInput.disabled = false;
+  checkInInput.value = b.check_in;
+  checkInInput.disabled = false;
+  checkOutInput.value = b.check_out;
+  checkOutInput.disabled = false;
+  sourceInput.value = b.source;
 
-  saveBtn.textContent='Update';
-  deleteBtn.style.display='block';
-  modal.style.display='block';
+  saveBtn.textContent = 'Update';
+  deleteBtn.style.display = 'block';
+  modal.style.display = 'block';
 }
 
-function closeModal(){ modal.style.display='none'; }
+function closeModal() {
+  modal.style.display = 'none';
+  clearSelecting();
+  SELECT_STEP = 0;
+}
 
 /* ===== SAVE / DELETE ===== */
-saveBtn.onclick=async()=>{
-  if (!isValidDateRange(checkInInput.value, checkOutInput.value)){
+saveBtn.onclick = async () => {
+  if (new Date(checkOutInput.value) <= new Date(checkInInput.value)) {
     alert('Checkout must be at least 1 day after check-in');
     return;
   }
 
-  const room=ROOMS.find(r=>r.name===roomInput.value);
-  const payload={
-    room_id:room.id,
-    check_in:checkInInput.value,
-    check_out:checkOutInput.value,
-    source:sourceInput.value
+  const room = ROOMS.find(r=>r.name===roomInput.value);
+  const payload = {
+    room_id: room.id,
+    check_in: checkInInput.value,
+    check_out: checkOutInput.value,
+    source: sourceInput.value
   };
 
   let res;
-  if (EDITING){
-    res=await sb.from('bookings').update(payload).eq('id',EDITING.id);
+  if (EDITING) {
+    res = await sb.from('bookings').update(payload).eq('id', EDITING.id);
   } else {
-    res=await sb.from('bookings').insert(payload);
+    res = await sb.from('bookings').insert(payload);
   }
-  if (res.error){ alert(res.error.message); return; }
+  if (res.error) { alert(res.error.message); return; }
   closeModal();
 };
 
-deleteBtn.onclick=async()=>{
+deleteBtn.onclick = async () => {
   if (!EDITING) return;
   if (!confirm('Delete booking?')) return;
-  await sb.from('bookings').delete().eq('id',EDITING.id);
+  await sb.from('bookings').delete().eq('id', EDITING.id);
   closeModal();
 };
 
 /* ===== REALTIME ===== */
-function setupRealtime(){
+function setupRealtime() {
   sb.channel('rt-bookings')
-    .on('postgres_changes',{event:'*',schema:'public',table:'bookings'},loadAll)
+    .on('postgres_changes', { event:'*', schema:'public', table:'bookings' }, loadAll)
     .subscribe();
 }
 </script>
