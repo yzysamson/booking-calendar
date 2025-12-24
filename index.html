@@ -25,7 +25,7 @@ body{
 }
 .topbar input{padding:6px;font-size:14px}
 
-/* ===== LEGEND ===== */
+/* ===== LEGEND / FILTER ===== */
 .legend{
   display:flex;
   gap:10px;
@@ -35,7 +35,13 @@ body{
 .legend-item{
   display:flex;
   align-items:center;
-  gap:4px
+  gap:4px;
+  padding:4px 6px;
+  border-radius:6px;
+  cursor:pointer
+}
+.legend-item.active{
+  background:#eee
 }
 .legend-color{
   width:12px;
@@ -96,9 +102,7 @@ body{
   border:1px solid #eee;
   cursor:pointer;
 }
-.cell.booked{
-  color:#fff
-}
+.cell.booked{color:#fff}
 .cell.selecting::after{
   content:"";
   position:absolute;
@@ -114,6 +118,36 @@ body{
 .src-slh{background:#6a5acd}
 .src-walkinwayne{background:#2e8b57}
 .src-walkinsoo{background:#8b4513}
+
+/* ===== MODAL ===== */
+.modal{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.35);
+  display:none;
+  z-index:999
+}
+.modal-box{
+  background:#fff;
+  border-radius:16px 16px 0 0;
+  padding:16px;
+  position:absolute;
+  bottom:0;left:0;right:0
+}
+.modal-box h3{margin:0 0 8px}
+.modal-box label{font-size:12px;color:#555}
+.modal-box input,
+.modal-box select,
+.modal-box button{
+  width:100%;
+  padding:12px;
+  margin:6px 0;
+  font-size:15px;
+  border-radius:10px;
+  border:1px solid #ddd
+}
+.actions{display:flex;gap:8px}
+.actions button{flex:1}
 </style>
 </head>
 
@@ -126,6 +160,31 @@ body{
 
 <div class="scroll-x">
   <div class="calendar" id="app"></div>
+</div>
+
+<!-- MODAL -->
+<div class="modal" id="modal">
+  <div class="modal-box">
+    <h3 id="modalTitle">New Booking</h3>
+
+    <label>Room</label>
+    <input id="roomInput" disabled>
+
+    <label>Check-in</label>
+    <input type="date" id="checkinInput" disabled>
+
+    <label>Check-out</label>
+    <input type="date" id="checkoutInput">
+
+    <label>Source</label>
+    <select id="sourceInput"></select>
+
+    <div class="actions">
+      <button id="saveBtn">Save</button>
+      <button id="deleteBtn" style="display:none">Delete</button>
+      <button onclick="closeModal()">Cancel</button>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -141,11 +200,22 @@ const SOURCES = [
 ];
 
 let ROOMS=[], BOOKINGS=[], DAYS=[];
-let selectedCell = null;
+let FILTER = new Set();
+let selectState = null;
+let editingBooking = null;
 
 const app = document.getElementById('app');
 const legend = document.getElementById('legend');
+const modal = document.getElementById('modal');
 const monthPicker = document.getElementById('monthPicker');
+
+const roomInput = document.getElementById('roomInput');
+const checkinInput = document.getElementById('checkinInput');
+const checkoutInput = document.getElementById('checkoutInput');
+const sourceInput = document.getElementById('sourceInput');
+const saveBtn = document.getElementById('saveBtn');
+const deleteBtn = document.getElementById('deleteBtn');
+const modalTitle = document.getElementById('modalTitle');
 
 /* ===== INIT ===== */
 monthPicker.value = new Date().toISOString().slice(0,7);
@@ -158,18 +228,32 @@ async function loadAll(){
   BOOKINGS = (await sb.from('booking_view').select('*')).data || [];
   buildLegend();
   buildDays();
+  buildSourceSelect();
   render();
 }
 
-/* ===== LEGEND ===== */
+/* ===== LEGEND / FILTER ===== */
 function buildLegend(){
   legend.innerHTML='';
   SOURCES.forEach(s=>{
     const el=document.createElement('div');
     el.className='legend-item';
-    el.innerHTML=
-      `<span class="legend-color src-${norm(s)}"></span>${s}`;
+    el.innerHTML=`<span class="legend-color src-${norm(s)}"></span>${s}`;
+    el.onclick=()=>{
+      FILTER.has(s) ? FILTER.delete(s) : FILTER.add(s);
+      el.classList.toggle('active');
+      render();
+    };
     legend.appendChild(el);
+  });
+}
+
+function buildSourceSelect(){
+  sourceInput.innerHTML='';
+  SOURCES.forEach(s=>{
+    const o=document.createElement('option');
+    o.value=s;o.textContent=s;
+    sourceInput.appendChild(o);
   });
 }
 
@@ -181,54 +265,116 @@ function buildDays(){
   );
 }
 
-/* ===== BOOKING CHECK (最终规则) ===== */
-function getCellBooking(room, date){
+/* ===== BOOKING CHECK ===== */
+function getCellBooking(room,date){
   return BOOKINGS.find(b =>
     b.room === room &&
     date >= b.check_in &&
-    date < b.check_out
+    date < b.check_out &&
+    (FILTER.size===0 || FILTER.has(b.source))
   );
 }
 
-/* ===== CLICK ===== */
+/* ===== CLICK CELL ===== */
 function onCellClick(el){
-  if(selectedCell){
-    selectedCell.classList.remove('selecting');
-  }
-  selectedCell = el;
-  el.classList.add('selecting');
-
   const room = el.dataset.room;
   const date = el.dataset.date;
+  const booking = getCellBooking(room,date);
 
-  console.log('New booking default:', room, date);
+  document.querySelectorAll('.cell.selecting')
+    .forEach(c=>c.classList.remove('selecting'));
+
+  if(booking){
+    openEdit(booking);
+    return;
+  }
+
+  if(!selectState || selectState.room !== room){
+    selectState = { room, checkin: date };
+    el.classList.add('selecting');
+    return;
+  }
+
+  let ci = selectState.checkin;
+  let co = date;
+  if(co <= ci){ [ci,co] = [co,ci]; }
+
+  openNew(selectState.room, ci, co);
+  selectState = null;
 }
+
+/* ===== MODAL ===== */
+function openNew(room, ci, co){
+  modalTitle.textContent='New Booking';
+  editingBooking = null;
+  roomInput.value=room;
+  checkinInput.value=ci;
+  checkoutInput.value=co;
+  deleteBtn.style.display='none';
+  modal.style.display='block';
+}
+
+function openEdit(b){
+  modalTitle.textContent='Edit Booking';
+  editingBooking=b;
+  roomInput.value=b.room;
+  checkinInput.value=b.check_in;
+  checkoutInput.value=b.check_out;
+  sourceInput.value=b.source;
+  deleteBtn.style.display='block';
+  modal.style.display='block';
+}
+
+function closeModal(){
+  modal.style.display='none';
+}
+
+/* ===== SAVE / DELETE ===== */
+saveBtn.onclick=async()=>{
+  if(editingBooking){
+    await sb.from('bookings').update({
+      room_id: editingBooking.room_id,
+      check_in: checkinInput.value,
+      check_out: checkoutInput.value,
+      source: sourceInput.value
+    }).eq('id',editingBooking.id);
+  }else{
+    await sb.from('bookings').insert({
+      room_id: ROOMS.find(r=>r.name===roomInput.value).id,
+      check_in: checkinInput.value,
+      check_out: checkoutInput.value,
+      source: sourceInput.value
+    });
+  }
+  closeModal(); loadAll();
+};
+
+deleteBtn.onclick=async()=>{
+  await sb.from('bookings').delete().eq('id',editingBooking.id);
+  closeModal(); loadAll();
+};
 
 /* ===== RENDER ===== */
 function render(){
   let html='';
   const cols = `120px repeat(${DAYS.length},56px)`;
 
-  /* header */
   html+=`
   <div class="header" style="grid-template-columns:${cols}">
     <div class="room corner">
       <span class="corner-date">Date</span>
       <span class="corner-room">Room</span>
     </div>`;
-  DAYS.forEach(d=> html+= `<div class="cell">${d.slice(8)}</div>`);
+  DAYS.forEach(d=>html+=`<div class="cell">${d.slice(8)}</div>`);
   html+=`</div>`;
 
-  /* rows */
   ROOMS.forEach(r=>{
     html+=`<div class="row" style="grid-template-columns:${cols}">
       <div class="room">${r.name}</div>`;
     DAYS.forEach(d=>{
-      const booking = getCellBooking(r.name,d);
+      const b = getCellBooking(r.name,d);
       let cls='cell';
-      if(booking){
-        cls+=` booked src-${norm(booking.source)}`;
-      }
+      if(b) cls+=` booked src-${norm(b.source)}`;
       html+=`
         <div class="${cls}"
              data-room="${r.name}"
@@ -239,7 +385,7 @@ function render(){
     html+=`</div>`;
   });
 
-  app.innerHTML = html;
+  app.innerHTML=html;
 }
 
 function norm(s){
