@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Booking Calendar</title>
 
 <style>
@@ -30,12 +30,9 @@ body {
 }
 
 /* ===== Calendar ===== */
-.wrapper {
-  overflow-x: auto;
-}
+.wrapper { overflow-x: auto; }
 
-.header,
-.row {
+.header, .row {
   display: grid;
   grid-auto-flow: column;
   grid-auto-columns: min-content;
@@ -52,7 +49,6 @@ body {
   font-size: 13px;
 }
 
-/* Desktop sticky room */
 @media (min-width: 769px) {
   .room-col {
     position: sticky;
@@ -74,7 +70,6 @@ body {
 .free { background: var(--free); }
 .booked { color: #fff; }
 
-/* Prevent room highlight */
 .room-col:hover,
 .row:hover .room-col {
   background: #fafafa !important;
@@ -89,7 +84,7 @@ body {
 .src-walkinwayne { background:#2e8b57; }
 .src-walkinsoo { background:#4682b4; }
 
-/* ===== Modal ===== */
+/* ===== Modal / iOS Bottom Sheet ===== */
 .modal {
   display: none;
   position: fixed;
@@ -100,30 +95,46 @@ body {
 
 .modal-box {
   background: #fff;
-  width: 90%;
-  max-width: 320px;
-  margin: 20% auto;
-  padding: 14px;
-  border-radius: 12px;
+  padding: 16px;
+  border-radius: 16px;
+}
+
+@media (min-width: 769px) {
+  .modal-box {
+    width: 360px;
+    margin: 15% auto;
+  }
+}
+
+@media (max-width: 768px) {
+  .modal-box {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    margin: 0;
+    border-radius: 16px 16px 0 0;
+  }
 }
 
 .modal-box h3 {
-  margin: 0 0 10px;
+  text-align: center;
+  font-weight: 600;
+  margin-top: 0;
 }
 
-.modal-box input,
-.modal-box button {
+.modal-box input, .modal-box button {
   width: 100%;
-  height: 34px;
-  margin-bottom: 8px;
+  height: 36px;
+  margin-bottom: 10px;
 }
 
-/* ===== Source buttons ===== */
+/* ===== Source Buttons ===== */
 .source-group {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  margin-bottom: 10px;
+  margin-bottom: 12px;
 }
 
 .source-btn {
@@ -156,16 +167,16 @@ body {
     <h3 id="modalTitle">Booking</h3>
 
     <label>Room</label>
-    <div id="roomDisplay" style="margin-bottom:8px;font-weight:600;"></div>
+    <div id="roomDisplay" style="font-weight:600;margin-bottom:10px;"></div>
 
     <label>Source</label>
     <div id="sourceGroup" class="source-group"></div>
 
     <label>Check-in</label>
-    <input id="checkInInput" readonly>
+    <input id="checkInInput" type="date" readonly>
 
     <label>Check-out</label>
-    <input id="checkOutInput" readonly>
+    <input id="checkOutInput" type="date">
 
     <button id="saveBtn">Save</button>
     <button id="deleteBtn">Delete</button>
@@ -175,16 +186,11 @@ body {
 
 <script>
 /* ===== CONFIG ===== */
-const API_URL = 'PASTE_YOUR_APPS_SCRIPT_URL_HERE';
+const API_URL = 'https://script.google.com/macros/s/AKfycbwI9CCIlORk9VfcJq8VJhkMm2w3lOs2WHWyRkBya4zr6pcCmbUmrrQXxb4JcEUxghps4A/exec';
 
 const SOURCES = [
-  "Booking",
-  "Trip",
-  "Agoda",
-  "Airbnb",
-  "SLH",
-  "Walk-in (Wayne)",
-  "Walk-in (Soo)"
+  "Booking","Trip","Agoda","Airbnb",
+  "SLH","Walk-in (Wayne)","Walk-in (Soo)"
 ];
 
 /* ===== STATE ===== */
@@ -192,10 +198,10 @@ let ROOMS=[], BOOKINGS=[], BOOKED_MAP={}, DAYS=[];
 let CURRENT_ROOM=null, CURRENT_SOURCE=null, EDIT_BOOKING=null;
 
 /* ===== INIT ===== */
-const app = document.getElementById('app');
-const monthPicker = document.getElementById('monthPicker');
-monthPicker.value = new Date().toISOString().slice(0,7);
-monthPicker.onchange = load;
+const app=document.getElementById('app');
+const monthPicker=document.getElementById('monthPicker');
+monthPicker.value=new Date().toISOString().slice(0,7);
+monthPicker.onchange=load;
 
 load();
 
@@ -257,27 +263,15 @@ function render(){
       if(BOOKED_MAP[key]){
         const s=BOOKED_MAP[key].source.toLowerCase().replace(/[^a-z]/g,'');
         c.className=`cell booked src-${s}`;
-      }else{
+      } else {
         c.className='cell free';
       }
-      c.onclick=()=>cellClick(room,day);
+      c.onclick=()=>openNew(room,day);
+      if(BOOKED_MAP[key]) c.onclick=()=>openEdit(BOOKED_MAP[key]);
       row.appendChild(c);
     });
     app.appendChild(row);
   });
-}
-
-/* ===== INTERACTION ===== */
-function cellClick(room,day){
-  const b=BOOKED_MAP[`${room}|${day}`];
-  if(b){ openEdit(b); return; }
-  CURRENT_ROOM=room;
-  document.getElementById('roomDisplay').textContent=room;
-  renderSources(SOURCES[0]);
-  document.getElementById('checkInInput').value=day;
-  document.getElementById('checkOutInput').value=day;
-  EDIT_BOOKING=null;
-  document.getElementById('modal').style.display='block';
 }
 
 /* ===== SOURCE ===== */
@@ -299,10 +293,24 @@ function renderSources(selected){
 }
 
 /* ===== MODAL ===== */
+function openNew(room,day){
+  CURRENT_ROOM=room;
+  EDIT_BOOKING=null;
+  roomDisplay.textContent=room;
+  renderSources(SOURCES[0]);
+
+  checkInInput.value=day;
+  const d=new Date(day); d.setDate(d.getDate()+1);
+  checkOutInput.value=d.toISOString().slice(0,10);
+
+  deleteBtn.style.display='none';
+  modal.style.display='block';
+}
+
 function openEdit(b){
   EDIT_BOOKING=b;
   CURRENT_ROOM=b.room;
-  document.getElementById('roomDisplay').textContent=b.room;
+  roomDisplay.textContent=b.room;
   renderSources(b.source);
   checkInInput.value=b.checkIn;
   checkOutInput.value=b.checkOut;
@@ -314,8 +322,28 @@ function closeModal(){
   modal.style.display='none';
 }
 
+/* ===== VALIDATION ===== */
+function hasConflict(room,ci,co,ignore){
+  const s=new Date(ci),e=new Date(co);
+  return BOOKINGS.some(b=>{
+    if(ignore && b===ignore) return false;
+    if(b.room!==room) return false;
+    const bs=new Date(b.checkIn),be=new Date(b.checkOut);
+    return s<be && e>bs;
+  });
+}
+
 /* ===== SAVE / DELETE ===== */
 saveBtn.onclick=()=>{
+  if(checkOutInput.value<=checkInInput.value){
+    alert('Check-out must be later than check-in');
+    return;
+  }
+  if(hasConflict(CURRENT_ROOM,checkInInput.value,checkOutInput.value,EDIT_BOOKING)){
+    alert('This room already has a booking in this period.');
+    return;
+  }
+
   fetch(API_URL,{
     method:'POST',
     body:JSON.stringify({
