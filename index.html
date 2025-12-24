@@ -37,11 +37,10 @@ body {
   height: 32px;
   border: 1px solid #eee;
 }
-.free { background: #FFF8EB; }
-.booked { color: #fff; }
+.free { background: #FFF8EB; cursor: pointer; }
+.booked { color: #fff; cursor: pointer; }
 
-.preview { opacity: 0.6; }
-.blocked { background: #999 !important; }
+.preview { outline: 2px solid #333; }
 
 .src-airbnb { background:#ff385c; }
 .src-booking { background:#003580; }
@@ -51,7 +50,6 @@ body {
 .src-walkinwayne { background:#2e8b57; }
 .src-walkinsoo { background:#8b4513; }
 
-/* Modal */
 .modal {
   position: fixed; inset: 0;
   background: rgba(0,0,0,.35);
@@ -65,6 +63,7 @@ body {
   position:absolute;
   bottom:0; left:0; right:0;
 }
+.modal-box label { font-size:12px; }
 .modal-box input, .modal-box select, .modal-box button {
   width:100%; padding:8px; margin:6px 0;
 }
@@ -76,7 +75,6 @@ body {
 
 <div class="topbar">
   <input type="month" id="monthPicker">
-  <span id="status" style="font-size:12px;color:#999"></span>
 </div>
 
 <div class="wrapper" id="app"></div>
@@ -84,10 +82,18 @@ body {
 <!-- Modal -->
 <div class="modal" id="modal">
   <div class="modal-box">
-    <input id="roomInput" readonly>
-    <input type="date" id="checkInInput" readonly>
+    <h3 id="modalTitle">New Booking</h3>
+
+    <label>Room</label>
+    <input id="roomInput">
+
+    <label>Check-in</label>
+    <input type="date" id="checkInInput">
+
+    <label>Check-out</label>
     <input type="date" id="checkOutInput">
 
+    <label>Source</label>
     <select id="sourceInput">
       <option>Airbnb</option>
       <option>Booking</option>
@@ -110,25 +116,24 @@ body {
 /* ================= CONFIG ================= */
 const SUPABASE_URL = 'https://pwscsukxfnbzjciuhtwl.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3c2NzdWt4Zm5iempjaXVodHdsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY1MzU1MDQsImV4cCI6MjA4MjExMTUwNH0.YQEXs1S3wprPMOarCL_DLXDtsSgY6I7TFM4bp_gLkW8';
-
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 /* ================= STATE ================= */
 let ROOMS=[], BOOKINGS=[], DAYS=[];
+let SELECT_STEP=0, START_DAY=null, START_ROOM=null;
 let EDITING=null;
-let DRAGGING=false, DRAG_ROOM=null, DRAG_START=null, LAST_DAY=null;
 
 /* ================= DOM ================= */
 const app=document.getElementById('app');
 const monthPicker=document.getElementById('monthPicker');
 const modal=document.getElementById('modal');
+const modalTitle=document.getElementById('modalTitle');
 const roomInput=document.getElementById('roomInput');
 const checkInInput=document.getElementById('checkInInput');
 const checkOutInput=document.getElementById('checkOutInput');
 const sourceInput=document.getElementById('sourceInput');
 const saveBtn=document.getElementById('saveBtn');
 const deleteBtn=document.getElementById('deleteBtn');
-const statusEl=document.getElementById('status');
 
 /* ================= BOOT ================= */
 monthPicker.value=new Date().toISOString().slice(0,7);
@@ -138,12 +143,10 @@ setupRealtime();
 
 /* ================= LOAD ================= */
 async function loadAll(){
-  statusEl.textContent='Loading...';
   ROOMS=(await sb.from('rooms').select('*').order('id')).data||[];
   BOOKINGS=(await sb.from('booking_view').select('*')).data||[];
   buildDays();
   render();
-  statusEl.textContent='OK';
 }
 
 function buildDays(){
@@ -152,55 +155,30 @@ function buildDays(){
     .map((_,i)=>`${y}-${String(m).padStart(2,'0')}-${String(i+1).padStart(2,'0')}`);
 }
 
-/* ================= HELPERS ================= */
 function isBooked(room, day){
   return BOOKINGS.some(b=>b.room===room && day>=b.check_in && day<b.check_out);
 }
 
-function clearPreview(){
-  document.querySelectorAll('.cell').forEach(c=>{
-    c.classList.remove('preview','blocked');
-  });
-}
-
-/* ================= DRAG LOGIC ================= */
-function startDrag(room, day){
+/* ================= CLICK LOGIC ================= */
+function clickFree(room, day){
   if (isBooked(room, day)) return;
-  DRAGGING=true;
-  DRAG_ROOM=room;
-  DRAG_START=day;
-  LAST_DAY=day;
-}
 
-function dragOver(day){
-  if (!DRAGGING) return;
-  clearPreview();
+  document.querySelectorAll('.preview').forEach(c=>c.classList.remove('preview'));
 
-  const [a,b]=DRAG_START<day?[DRAG_START,day]:[day,DRAG_START];
-
-  for (const d of DAYS){
-    if (d<a||d>b) continue;
-
-    if (isBooked(DRAG_ROOM,d)){
-      LAST_DAY=null;
-      document.querySelectorAll(`[data-room="${DRAG_ROOM}"][data-day="${d}"]`)
-        .forEach(c=>c.classList.add('blocked'));
-      return;
-    }
-
-    document.querySelectorAll(`[data-room="${DRAG_ROOM}"][data-day="${d}"]`)
-      .forEach(c=>c.classList.add('preview'));
-    LAST_DAY=day;
+  if (SELECT_STEP===0){
+    START_DAY=day;
+    START_ROOM=room;
+    SELECT_STEP=1;
+    highlight(room, day);
+  } else {
+    SELECT_STEP=0;
+    openNew(room, START_DAY, day);
   }
 }
 
-function endDrag(){
-  if (!DRAGGING){ clearPreview(); return; }
-  DRAGGING=false;
-  clearPreview();
-  if (!LAST_DAY) return;
-
-  openNew(DRAG_ROOM, DRAG_START, LAST_DAY);
+function highlight(room, day){
+  document.querySelectorAll(`[data-room="${room}"][data-day="${day}"]`)
+    .forEach(c=>c.classList.add('preview'));
 }
 
 /* ================= RENDER ================= */
@@ -238,11 +216,7 @@ function render(){
         cell.onclick=()=>openEdit(b);
       } else {
         cell.className='cell free';
-        cell.onmousedown=()=>startDrag(r.name,d);
-        cell.onmouseenter=()=>dragOver(d);
-        cell.onmouseup=endDrag;
-        cell.ontouchstart=()=>startDrag(r.name,d);
-        cell.ontouchend=endDrag;
+        cell.onclick=()=>clickFree(r.name,d);
       }
       row.appendChild(cell);
     });
@@ -253,26 +227,47 @@ function render(){
 /* ================= MODAL ================= */
 function openNew(room,start,end){
   EDITING=null;
+  modalTitle.textContent='New Booking';
+
   roomInput.value=room;
+  roomInput.disabled=true;
+
   checkInInput.value=start;
-  const d=new Date(end); d.setDate(d.getDate()+1);
+  checkInInput.disabled=true;
+
+  const [a,b]=start<end?[start,end]:[end,start];
+  const d=new Date(b); d.setDate(d.getDate()+1);
   checkOutInput.value=d.toISOString().slice(0,10);
-  sourceInput.value='Airbnb';
+  checkOutInput.disabled=false;
+
+  saveBtn.textContent='Save';
   deleteBtn.style.display='none';
   modal.style.display='block';
 }
 
 function openEdit(b){
   EDITING=b;
+  modalTitle.textContent='Edit Booking';
+
   roomInput.value=b.room;
+  roomInput.disabled=false;
+
   checkInInput.value=b.check_in;
+  checkInInput.disabled=false;
+
   checkOutInput.value=b.check_out;
+  checkOutInput.disabled=false;
+
   sourceInput.value=b.source;
+
+  saveBtn.textContent='Update';
   deleteBtn.style.display='block';
   modal.style.display='block';
 }
 
-function closeModal(){ modal.style.display='none'; }
+function closeModal(){
+  modal.style.display='none';
+}
 
 /* ================= SAVE / DELETE ================= */
 saveBtn.onclick=async()=>{
@@ -280,6 +275,7 @@ saveBtn.onclick=async()=>{
     alert('Checkout must be later');
     return;
   }
+
   const room=ROOMS.find(r=>r.name===roomInput.value);
   const payload={
     room_id:room.id,
@@ -287,12 +283,14 @@ saveBtn.onclick=async()=>{
     check_out:checkOutInput.value,
     source:sourceInput.value
   };
+
   let res;
   if (EDITING){
     res=await sb.from('bookings').update(payload).eq('id',EDITING.id);
   } else {
     res=await sb.from('bookings').insert(payload);
   }
+
   if (res.error){ alert(res.error.message); return; }
   closeModal();
 };
