@@ -1,43 +1,46 @@
 /* =====================================================
-   GLOBAL
+   GLOBAL — LOCK THE SCREEN
 ===================================================== */
 *{
   box-sizing:border-box;
 }
 
-body{
+html, body{
   margin:0;
+  padding:0;
+  width:100%;
+  height:100%;
+  overflow:hidden;                 /* 🔒 整个页面不能滑 */
   font-family:system-ui, -apple-system, BlinkMacSystemFont;
   background:#faf7f2;
   color:#111;
-  overflow:hidden;                 /* 🔒 整页不允许横滑 */
 }
 
 /* =====================================================
-   TOP BAR (FREEZE)
+   TOP BAR — FREEZE
 ===================================================== */
 .topbar{
-  position:fixed;
+  position:absolute;
   top:0;
   left:0;
   right:0;
-  z-index:100;
+  height:52px;
   padding:8px;
-  border-bottom:1px solid #e5e5e5;
   display:flex;
   gap:10px;
   align-items:center;
   background:#faf7f2;
+  border-bottom:1px solid #e5e5e5;
+  z-index:100;
 }
 
-/* Month input */
 .topbar input{
   padding:4px 6px;
   font-size:14px;
 }
 
 /* =====================================================
-   LEGEND (ONLY THIS CAN SCROLL X)
+   LEGEND — X SCROLL ONLY
 ===================================================== */
 .legend{
   display:flex;
@@ -49,29 +52,30 @@ body{
 }
 
 /* =====================================================
-   CALENDAR AREA
+   MAIN SCREEN AREA (BETWEEN TOP & SUMMARY)
 ===================================================== */
-
-/* 包住整个 calendar（不滚） */
-#calendar-scroll{
-  position:fixed;
-  top:52px;                        /* 紧贴 month selector 下 */
-  bottom:120px;                    /* 给 summary 让位 */
+#calendar-screen{
+  position:absolute;
+  top:52px;                        /* under topbar */
+  bottom:120px;                    /* above summary */
   left:0;
   right:0;
-  overflow:hidden;                 /* 🔒 禁止整体滚 */
+  overflow:hidden;                 /* 🔒 no page scroll */
   background:#faf7f2;
 }
 
 /* =====================================================
-   X AXIS SCROLL ZONE (ONLY DATE CAN MOVE)
+   CALENDAR X SCROLL WINDOW (ONLY SCROLLABLE ZONE)
 ===================================================== */
 #calendar-scroll{
-  overflow-x:auto;                 /* ✅ 只有这里能横滑 */
+  width:100%;
+  height:100%;
+  overflow-x:auto;                 /* ✅ ONLY THIS SCROLLS */
+  overflow-y:hidden;
   -webkit-overflow-scrolling:touch;
 }
 
-/* calendar 内容必须能撑开 */
+/* calendar content must expand horizontally */
 #app{
   min-width:fit-content;
 }
@@ -85,11 +89,11 @@ body{
 }
 
 /* =====================================================
-   FREEZE: DATE HEADER (TOP, UNDER MONTH SELECT)
+   FREEZE: DATE HEADER
 ===================================================== */
 .header{
   position:sticky;
-  top:0;                           /* 相对 calendar-scroll */
+  top:0;
   z-index:20;
   background:#faf7f2;
 }
@@ -106,53 +110,17 @@ body{
 
   position:sticky;
   left:0;
-  z-index:30;                      /* 永远盖在 X 上 */
+  z-index:30;
 }
 
-/* 左上角 Date / Room */
+/* top-left corner */
 .header .room{
   background:#f3f1ec;
   z-index:40;
 }
 
 /* =====================================================
-   CORNER CELL
-===================================================== */
-.corner{
-  position:relative;
-  width:88px;
-  height:34px;
-  background:#f3f1ec;
-  color:#777;
-  font-size:10px;
-}
-
-.corner::before{
-  content:"";
-  position:absolute;
-  inset:0;
-  background:linear-gradient(
-    45deg,
-    transparent 49.5%,
-    #d0d0d0 50%,
-    transparent 50.5%
-  );
-}
-
-.corner-date{
-  position:absolute;
-  top:4px;
-  left:6px;
-}
-
-.corner-room{
-  position:absolute;
-  bottom:4px;
-  right:6px;
-}
-
-/* =====================================================
-   CELL
+   CELLS
 ===================================================== */
 .cell{
   height:34px;
@@ -193,20 +161,19 @@ body{
 .src-walkinsoo{background:#8b4513}
 
 /* =====================================================
-   SUMMARY (FREEZE BOTTOM)
+   SUMMARY — FREEZE BOTTOM
 ===================================================== */
 #summary{
-  position:fixed;
+  position:absolute;
   bottom:0;
   left:0;
   right:0;
-  z-index:100;
-  border-top:1px solid #e5e5e5;
+  height:120px;
   padding:10px;
-  font-size:13px;
   background:#faf7f2;
-  max-height:120px;
-  overflow-y:auto;                 /* 只在 summary 内滚 */
+  border-top:1px solid #e5e5e5;
+  z-index:100;
+  overflow-y:auto;                 /* summary 内可滚 */
 }
 
 .summary-title{
@@ -239,25 +206,4 @@ body{
   bottom:0;
   left:0;
   right:0;
-}
-
-.modal-box input,
-.modal-box select{
-  width:100%;
-  height:36px;
-  margin:4px 0;
-  font-size:14px;
-}
-
-.actions{
-  display:flex;
-  gap:8px;
-}
-
-.actions button{
-  flex:1;
-}
-
-#saveBtn:disabled{
-  opacity:.4;
 }
