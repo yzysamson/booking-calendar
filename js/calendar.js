@@ -8,12 +8,12 @@ function norm(s){
 /* =======================
    SUPABASE
 ======================= */
-const sb = supabase.createClient(
+var sb = supabase.createClient(
   'https://pwscsukxfnbzjciuhtwl.supabase.co',
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3c2NzdWt4Zm5iempjaXVodHdsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY1MzU1MDQsImV4cCI6MjA4MjExMTUwNH0.YQEXs1S3wprPMOarCL_DLXDtsSgY6I7TFM4bp_gLkW8'
 );
 
-const SOURCES = [
+var SOURCES = [
   'Airbnb','Booking','Agoda','Trip','SLH',
   'Walk-in (Wayne)','Walk-in (Soo)'
 ];
@@ -21,52 +21,65 @@ const SOURCES = [
 /* =======================
    STATE
 ======================= */
-let ROOMS = [];
-let BOOKINGS = [];
-let DAYS = [];
+var ROOMS = [];
+var BOOKINGS = [];
+var DAYS = [];
 
-let FILTER = new Set();
-let selectState = null;
-let editing = null;
+var FILTER = {};
+var selectState = null;
+var editing = null;
 
 /* =======================
    DOM
 ======================= */
-const app = document.getElementById('app');
-const legend = document.getElementById('legend');
-const summary = document.getElementById('summary');
-const modal = document.getElementById('modal');
+var app = document.getElementById('app');
+var legend = document.getElementById('legend');
+var summary = document.getElementById('summary');
+var modal = document.getElementById('modal');
 
-const roomInput = document.getElementById('roomInput');
-const checkinInput = document.getElementById('checkinInput');
-const checkoutInput = document.getElementById('checkoutInput');
-const sourceInput = document.getElementById('sourceInput');
-const priceInput = document.getElementById('priceInput');
-const remarkInput = document.getElementById('remarkInput');
-const modalTitle = document.getElementById('modalTitle');
-const monthPicker = document.getElementById('monthPicker');
-const saveBtn = document.getElementById('saveBtn');
-const deleteBtn = document.getElementById('deleteBtn');
+var roomInput = document.getElementById('roomInput');
+var checkinInput = document.getElementById('checkinInput');
+var checkoutInput = document.getElementById('checkoutInput');
+var sourceInput = document.getElementById('sourceInput');
+var priceInput = document.getElementById('priceInput');
+var remarkInput = document.getElementById('remarkInput');
+var modalTitle = document.getElementById('modalTitle');
+var monthPicker = document.getElementById('monthPicker');
+var saveBtn = document.getElementById('saveBtn');
+var deleteBtn = document.getElementById('deleteBtn');
 
 /* =======================
    INIT
 ======================= */
 monthPicker.value = new Date().toISOString().slice(0,7);
-monthPicker.onchange = loadAll;
+monthPicker.onchange = function(){
+  loadAll();
+};
+
 loadAll();
 
 /* =======================
-   LOAD
+   LOAD (SAFE)
 ======================= */
 async function loadAll(){
-  ROOMS = (await sb.from('rooms').select('*').order('id')).data || [];
-  BOOKINGS = (await sb.from('booking_view').select('*')).data || [];
-  BOOKINGS.forEach(b => delete b.__hidden);
+  try{
+    var r1 = await sb.from('rooms').select('*').order('id');
+    var r2 = await sb.from('booking_view').select('*');
+
+    ROOMS = r1.data || [];
+    BOOKINGS = r2.data || [];
+  }catch(e){
+    alert('Network error. Please refresh.');
+    return;
+  }
+
+  for(var i=0;i<BOOKINGS.length;i++){
+    delete BOOKINGS[i].__hidden;
+  }
 
   buildLegend();
   buildDays();
   buildSelects();
-
   render();
   renderSummary();
 }
@@ -76,44 +89,37 @@ async function loadAll(){
 ======================= */
 function buildLegend(){
   legend.innerHTML = '';
+  FILTER = {};
 
-  const all = document.createElement('div');
+  var all = document.createElement('div');
   all.className = 'legend-item active';
-  all.textContent = 'All';
-
-  all.onclick = () => {
-    FILTER.clear();
-    BOOKINGS.forEach(b => delete b.__hidden);
-    document.querySelectorAll('.legend-item')
-      .forEach(i => i.classList.remove('active'));
-    all.classList.add('active');
+  all.innerHTML = 'All';
+  all.onclick = function(){
+    FILTER = {};
     render();
   };
-
   legend.appendChild(all);
 
-  SOURCES.forEach(src => {
-    const el = document.createElement('div');
-    el.className = 'legend-item';
+  for(var i=0;i<SOURCES.length;i++){
+    (function(src){
+      var el = document.createElement('div');
+      el.className = 'legend-item';
+      el.innerHTML =
+        '<span class="legend-color src-'+norm(src)+'"></span>' + src;
 
-    el.innerHTML = `
-      <span class="legend-color src-${norm(src)}"></span>
-      ${src}
-    `;
-
-    el.onclick = () => {
-      if(FILTER.has(src)){
-        FILTER.delete(src);
-        el.classList.remove('active');
-      }else{
-        FILTER.add(src);
-        el.classList.add('active');
-      }
-      render();
-    };
-
-    legend.appendChild(el);
-  });
+      el.onclick = function(){
+        if(FILTER[src]){
+          delete FILTER[src];
+          el.classList.remove('active');
+        }else{
+          FILTER[src] = true;
+          el.classList.add('active');
+        }
+        render();
+      };
+      legend.appendChild(el);
+    })(SOURCES[i]);
+  }
 }
 
 /* =======================
@@ -121,98 +127,119 @@ function buildLegend(){
 ======================= */
 function buildSelects(){
   roomInput.innerHTML = '';
-  ROOMS.forEach(r=>{
-    roomInput.innerHTML += `<option value="${r.id}">${r.name}</option>`;
-  });
+  for(var i=0;i<ROOMS.length;i++){
+    roomInput.innerHTML +=
+      '<option value="'+ROOMS[i].id+'">'+ROOMS[i].name+'</option>';
+  }
 
   sourceInput.innerHTML = '';
-  SOURCES.forEach(s=>{
-    sourceInput.innerHTML += `<option>${s}</option>`;
-  });
+  for(var j=0;j<SOURCES.length;j++){
+    sourceInput.innerHTML += '<option>'+SOURCES[j]+'</option>';
+  }
 }
 
 /* =======================
    DAYS
 ======================= */
 function buildDays(){
-  const [y,m] = monthPicker.value.split('-').map(Number);
-  DAYS = [...Array(new Date(y,m,0).getDate())]
-    .map((_,i)=>`${y}-${String(m).padStart(2,'0')}-${String(i+1).padStart(2,'0')}`);
+  var parts = monthPicker.value.split('-');
+  var y = Number(parts[0]);
+  var m = Number(parts[1]);
+
+  DAYS = [];
+  var total = new Date(y,m,0).getDate();
+  for(var i=1;i<=total;i++){
+    DAYS.push(
+      y + '-' +
+      (m<10?'0'+m:m) + '-' +
+      (i<10?'0'+i:i)
+    );
+  }
 }
 
 /* =======================
    RENDER
 ======================= */
 function render(){
-  let html = '';
-  const cols = `88px repeat(${DAYS.length},56px)`;
+  var html = '';
+  var cols = '88px repeat('+DAYS.length+',56px)';
 
-  /* HEADER */
-  html += `
-    <div class="header" style="grid-template-columns:${cols}">
-      <div class="room corner">
-        <span class="corner-room">Room</span>
-        <span class="corner-date">Date</span>
-      </div>
-  `;
-  DAYS.forEach(d => html += `<div class="cell">${d.slice(8)}</div>`);
-  html += `</div>`;
+  html += '<div class="header" style="grid-template-columns:'+cols+'">';
+  html += '<div class="room corner">' +
+          '<span class="corner-room">Room</span>' +
+          '<span class="corner-date">Date</span>' +
+          '</div>';
 
-  /* ROWS */
-  ROOMS.forEach(r=>{
-    html += `<div class="row" style="grid-template-columns:${cols}">
-      <div class="room">${r.name}</div>
-    `;
+  for(var d=0;d<DAYS.length;d++){
+    html += '<div class="cell">'+DAYS[d].slice(8)+'</div>';
+  }
+  html += '</div>';
 
-    let i = 0;
-    while(i < DAYS.length){
-      const d = DAYS[i];
-      const b = BOOKINGS.find(x =>
-        !x.__hidden &&
-        x.room === r.name &&
-        d >= x.check_in &&
-        d < x.check_out &&
-        (FILTER.size === 0 || FILTER.has(x.source))
-      );
+  for(var r=0;r<ROOMS.length;r++){
+    html += '<div class="row" style="grid-template-columns:'+cols+'">';
+    html += '<div class="room">'+ROOMS[r].name+'</div>';
 
-      if(!b){
-        html += `<div class="cell" data-room="${r.name}" data-date="${d}"></div>`;
-        i++;
-        continue;
+    var i=0;
+    while(i<DAYS.length){
+      var day = DAYS[i];
+      var found = null;
+
+      for(var b=0;b<BOOKINGS.length;b++){
+        var bk = BOOKINGS[b];
+        if(bk.room===ROOMS[r].name &&
+           day>=bk.check_in && day<bk.check_out &&
+           (!Object.keys(FILTER).length || FILTER[bk.source])){
+          found = bk;
+          break;
+        }
       }
 
-      const span = (new Date(b.check_out) - new Date(d)) / 86400000;
-      html += `
-        <div class="bar src-${norm(b.source)}"
-             style="grid-column:span ${span}"
-             onclick="openEdit(${b.id})">
-          ${b.price || ''}
-        </div>
-      `;
-      i += span;
+      if(!found){
+        html += '<div class="cell" data-room="'+ROOMS[r].name+
+                '" data-date="'+day+'"></div>';
+        i++;
+      }else{
+        var span =
+          (new Date(found.check_out)-new Date(day))/86400000;
+        html += '<div class="bar src-'+norm(found.source)+
+                '" style="grid-column:span '+span+'">'+
+                (found.price||'')+'</div>';
+        i+=span;
+      }
     }
 
-    html += `</div>`;
-  });
+    html += '</div>';
+  }
 
   app.innerHTML = html;
 }
 
 /* =======================
-   CLICK (EVENT DELEGATE)
+   CLICK (NO closest)
 ======================= */
-app.addEventListener('click', e=>{
-  const cell = e.target.closest('.cell');
-  if(!cell) return;
-  onCellClick(cell);
-});
+app.onclick = function(e){
+  var el = e.target;
+  while(el && el!==app){
+    if(el.className && el.className.indexOf('cell')!==-1){
+      onCellClick(el);
+      return;
+    }
+    el = el.parentNode;
+  }
+};
 
+/* =======================
+   CELL LOGIC
+======================= */
 function onCellClick(el){
-  const room = el.dataset.room;
-  const date = el.dataset.date;
+  var room = el.getAttribute('data-room');
+  var date = el.getAttribute('data-date');
+  if(!room || !date) return;
 
-  if(!selectState || selectState.room !== room || date <= selectState.checkin){
-    selectState = { room, checkin: date };
+  if(!selectState ||
+     selectState.room!==room ||
+     date<=selectState.checkin){
+    selectState = { room:room, checkin:date };
     return;
   }
 
@@ -224,30 +251,21 @@ function onCellClick(el){
    MODAL
 ======================= */
 function openNew(room,ci,co){
-  modalTitle.textContent = 'New Booking';
+  modalTitle.innerHTML = 'New Booking';
   editing = null;
 
-  roomInput.value = ROOMS.find(r=>r.name===room).id;
+  for(var i=0;i<ROOMS.length;i++){
+    if(ROOMS[i].name===room){
+      roomInput.value = ROOMS[i].id;
+      break;
+    }
+  }
+
   checkinInput.value = ci;
   checkoutInput.value = co;
   priceInput.value = '';
   remarkInput.value = '';
   deleteBtn.style.display = 'none';
-
-  modal.style.display = 'block';
-}
-
-function openEdit(id){
-  editing = BOOKINGS.find(b=>b.id===id);
-  modalTitle.textContent = 'Edit Booking';
-
-  roomInput.value = editing.room_id;
-  checkinInput.value = editing.check_in;
-  checkoutInput.value = editing.check_out;
-  sourceInput.value = editing.source;
-  priceInput.value = editing.price || '';
-  remarkInput.value = editing.remark || '';
-  deleteBtn.style.display = 'block';
 
   modal.style.display = 'block';
 }
@@ -259,9 +277,9 @@ function closeModal(){
 /* =======================
    SAVE / DELETE
 ======================= */
-saveBtn.onclick = async ()=>{
-  const payload = {
-    room_id: +roomInput.value,
+saveBtn.onclick = async function(){
+  var payload = {
+    room_id: Number(roomInput.value),
     check_in: checkinInput.value,
     check_out: checkoutInput.value,
     source: sourceInput.value,
@@ -269,15 +287,18 @@ saveBtn.onclick = async ()=>{
     remark: remarkInput.value || null
   };
 
-  editing
-    ? await sb.from('bookings').update(payload).eq('id', editing.id)
-    : await sb.from('bookings').insert(payload);
+  if(editing){
+    await sb.from('bookings').update(payload).eq('id', editing.id);
+  }else{
+    await sb.from('bookings').insert(payload);
+  }
 
   closeModal();
   loadAll();
 };
 
-deleteBtn.onclick = async ()=>{
+deleteBtn.onclick = async function(){
+  if(!editing) return;
   await sb.from('bookings').delete().eq('id', editing.id);
   closeModal();
   loadAll();
