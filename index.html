@@ -30,16 +30,13 @@ body{margin:0;font-family:system-ui;background:#fff;color:#111}
 .legend-item.active{background:#eee}
 .legend-color{width:10px;height:10px;border-radius:3px}
 
-/* ===== SCROLL (⭐ sticky 修复在这里) ===== */
+/* ===== SCROLL (sticky fix) ===== */
 .scroll-x{
   overflow-x:auto;
-  overflow-y:visible;   /* ⭐ 关键 */
+  overflow-y:visible;
   -webkit-overflow-scrolling:touch;
 }
-.calendar{
-  min-width:max-content;
-  overflow:visible;     /* ⭐ iOS 兜底 */
-}
+.calendar{min-width:max-content;overflow:visible}
 
 /* ===== GRID ===== */
 .header,.row{display:grid}
@@ -54,14 +51,8 @@ body{margin:0;font-family:system-ui;background:#fff;color:#111}
   position:sticky;
   left:0;
   z-index:3;
-  white-space:nowrap
 }
-.header .room{
-  background:#f5f5f5;
-  z-index:4;
-  position:relative;
-  padding:0;
-}
+.header .room{background:#f5f5f5;z-index:4;padding:0}
 
 /* ===== CORNER ===== */
 .corner{
@@ -76,12 +67,8 @@ body{margin:0;font-family:system-ui;background:#fff;color:#111}
   content:"";
   position:absolute;
   inset:0;
-  background:linear-gradient(
-    45deg,
-    transparent 49.5%,
-    #d0d0d0 50%,
-    transparent 50.5%
-  );
+  background:linear-gradient(45deg,
+    transparent 49.5%,#d0d0d0 50%,transparent 50.5%);
 }
 .corner-date{position:absolute;top:4px;left:6px}
 .corner-room{position:absolute;bottom:4px;right:6px}
@@ -164,7 +151,6 @@ body{margin:0;font-family:system-ui;background:#fff;color:#111}
   font-size:14px;
   border-radius:8px;
   border:1px solid #ddd;
-  appearance:none;
 }
 .modal-box button{
   height:38px;
@@ -209,7 +195,7 @@ body{margin:0;font-family:system-ui;background:#fff;color:#111}
     <select id="sourceInput"></select>
 
     <label>Price</label>
-    <input type="number" id="priceInput" step="0.01">
+    <input type="number" id="priceInput">
 
     <label>Remark</label>
     <input type="text" id="remarkInput">
@@ -223,13 +209,16 @@ body{margin:0;font-family:system-ui;background:#fff;color:#111}
 </div>
 
 <script>
-/* ===== Supabase ===== */
+/* ===== SUPABASE ===== */
 const sb = supabase.createClient(
-  'https://pwscsukxfnbzjciuhtwl.supabase.co',
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3c2NzdWt4Zm5iempjaXVodHdsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY1MzU1MDQsImV4cCI6MjA4MjExMTUwNH0.YQEXs1S3wprPMOarCL_DLXDtsSgY6I7TFM4bp_gLkW8'
+  'https://YOUR_PROJECT.supabase.co',
+  'YOUR_PUBLIC_ANON_KEY'
 );
 
-const SOURCES=['Airbnb','Booking','Agoda','Trip','SLH','Walk-in (Wayne)','Walk-in (Soo)'];
+const SOURCES=[
+  'Airbnb','Booking','Agoda','Trip','SLH',
+  'Walk-in (Wayne)','Walk-in (Soo)'
+];
 
 let ROOMS=[],BOOKINGS=[],DAYS=[];
 let FILTER=new Set();
@@ -262,7 +251,7 @@ async function loadAll(){
   buildDays();buildLegend();buildSelects();render();
 }
 
-/* ===== Legend / Selects / Days ===== */
+/* ===== BUILDERS ===== */
 function buildLegend(){
   legend.innerHTML='';
   const all=document.createElement('div');
@@ -275,23 +264,29 @@ function buildLegend(){
     const el=document.createElement('div');
     el.className='legend-item';
     el.innerHTML=`<span class="legend-color src-${norm(s)}"></span>${s}`;
-    el.onclick=()=>{FILTER.has(s)?FILTER.delete(s):FILTER.add(s);el.classList.toggle('active');render()};
+    el.onclick=()=>{
+      FILTER.has(s)?FILTER.delete(s):FILTER.add(s);
+      el.classList.toggle('active');
+      render();
+    };
     legend.appendChild(el);
   });
 }
+
 function buildSelects(){
   roomInput.innerHTML='';
   ROOMS.forEach(r=>roomInput.innerHTML+=`<option value="${r.id}">${r.name}</option>`);
   sourceInput.innerHTML='';
   SOURCES.forEach(s=>sourceInput.innerHTML+=`<option>${s}</option>`);
 }
+
 function buildDays(){
   const [y,m]=monthPicker.value.split('-').map(Number);
   DAYS=[...Array(new Date(y,m,0).getDate())]
     .map((_,i)=>`${y}-${String(m).padStart(2,'0')}-${String(i+1).padStart(2,'0')}`);
 }
 
-/* ===== Render ===== */
+/* ===== RENDER ===== */
 function render(){
   let html='';
   const cols=`88px repeat(${DAYS.length},56px)`;
@@ -311,7 +306,11 @@ function render(){
     let i=0;
     while(i<DAYS.length){
       const d=DAYS[i];
-      const b=BOOKINGS.find(x=>x.room===r.name && d>=x.check_in && d<x.check_out && (FILTER.size===0||FILTER.has(x.source)));
+      const b=BOOKINGS.find(x=>
+        x.room===r.name &&
+        d>=x.check_in && d<x.check_out &&
+        (FILTER.size===0||FILTER.has(x.source))
+      );
 
       if(!b){
         html+=`<div class="cell" data-room="${r.name}" data-date="${d}"
@@ -331,24 +330,36 @@ function render(){
   app.innerHTML=html;
 }
 
-/* ===== Click logic ===== */
+/* ===== CLICK LOGIC (RANGE) ===== */
 function onCellClick(el){
   const room=el.dataset.room;
   const date=el.dataset.date;
 
-  document.querySelectorAll('.cell.selecting').forEach(c=>c.classList.remove('selecting'));
+  document.querySelectorAll('.cell.selecting')
+    .forEach(c=>c.classList.remove('selecting'));
 
+  // first click = check-in
   if(!selectState || selectState.room!==room){
-    selectState={room,date};
+    selectState={room,checkin:date};
     el.classList.add('selecting');
     return;
   }
 
-  openNew(room,selectState.date,date);
+  // second click = check-out (leave day)
+  let checkin=selectState.checkin;
+  let checkout=date;
+
+  if(checkout<=checkin){
+    const d=new Date(checkin);
+    d.setDate(d.getDate()+1);
+    checkout=d.toISOString().slice(0,10);
+  }
+
+  openNew(room,checkin,checkout);
   selectState=null;
 }
 
-/* ===== Modal ===== */
+/* ===== MODAL ===== */
 function openNew(room,ci,co){
   modalTitle.textContent='New Booking';
   saveBtn.textContent='Save';
@@ -356,13 +367,8 @@ function openNew(room,ci,co){
 
   roomInput.value=ROOMS.find(r=>r.name===room).id;
   checkinInput.value=ci;
-
-  const nextDay=new Date(ci);
-  nextDay.setDate(nextDay.getDate()+1);
-  const minCheckout=nextDay.toISOString().slice(0,10);
-
-  checkoutInput.min=minCheckout;
-  checkoutInput.value=minCheckout;
+  checkoutInput.value=co;
+  checkoutInput.min=ci;
 
   roomInput.disabled=true;
   checkinInput.disabled=true;
@@ -398,9 +404,8 @@ function openEdit(id){
 
 function closeModal(){modal.style.display='none'}
 
-/* ===== Save / Delete ===== */
 checkoutInput.onchange=()=>{
-  saveBtn.disabled = checkoutInput.value <= checkinInput.value;
+  saveBtn.disabled = checkoutInput.value<=checkinInput.value;
 };
 
 saveBtn.onclick=async()=>{
