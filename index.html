@@ -104,7 +104,17 @@ body{
   justify-content:center;
   font-size:12px;
 }
-.cell.booked{color:#fff}
+.cell.booked{
+  color:#fff;
+  flex-direction:column;
+  font-size:11px;
+}
+.cell .price{
+  font-size:10px;
+  opacity:.9;
+}
+
+/* ===== SELECTING ===== */
 .cell.selecting::after{
   content:"";
   position:absolute;
@@ -170,64 +180,23 @@ body{
   <div class="calendar" id="app"></div>
 </div>
 
-<!-- MODAL -->
-<div class="modal" id="modal">
-  <div class="modal-box">
-    <h3 id="modalTitle"></h3>
-
-    <label>Room</label>
-    <select id="roomInput"></select>
-
-    <label>Check-in</label>
-    <input type="date" id="checkinInput">
-
-    <label>Check-out</label>
-    <input type="date" id="checkoutInput">
-
-    <label>Source</label>
-    <select id="sourceInput"></select>
-
-    <div class="conflict-text" id="conflictText" style="display:none">
-      Date range conflicts with existing booking
-    </div>
-
-    <div class="actions">
-      <button id="saveBtn">Save</button>
-      <button id="deleteBtn" style="display:none">Delete</button>
-      <button onclick="closeModal()">Cancel</button>
-    </div>
-  </div>
-</div>
-
 <script>
 /* ===== CONFIG ===== */
 const sb = supabase.createClient(
   'https://pwscsukxfnbzjciuhtwl.supabase.co',
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3c2NzdWt4Zm5iempjaXVodHdsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY1MzU1MDQsImV4cCI6MjA4MjExMTUwNH0.YQEXs1S3wprPMOarCL_DLXDtsSgY6I7TFM4bp_gLkW8'
+  'YOUR_PUBLIC_ANON_KEY'
 );
 
-const SOURCES = [
+const SOURCES=[
   'Airbnb','Booking','Agoda','Trip','SLH',
   'Walk-in (Wayne)','Walk-in (Soo)'
 ];
 
 let ROOMS=[], BOOKINGS=[], DAYS=[];
 let FILTER=new Set();
-let selectState=null;
-let editingBooking=null;
 
 const app=document.getElementById('app');
 const legend=document.getElementById('legend');
-const modal=document.getElementById('modal');
-
-const roomInput=document.getElementById('roomInput');
-const checkinInput=document.getElementById('checkinInput');
-const checkoutInput=document.getElementById('checkoutInput');
-const sourceInput=document.getElementById('sourceInput');
-const saveBtn=document.getElementById('saveBtn');
-const deleteBtn=document.getElementById('deleteBtn');
-const modalTitle=document.getElementById('modalTitle');
-const conflictText=document.getElementById('conflictText');
 const monthPicker=document.getElementById('monthPicker');
 
 /* ===== INIT ===== */
@@ -241,14 +210,12 @@ async function loadAll(){
   BOOKINGS=(await sb.from('booking_view').select('*')).data||[];
   buildLegend();
   buildDays();
-  buildSelects();
   render();
 }
 
 /* ===== LEGEND ===== */
 function buildLegend(){
   legend.innerHTML='';
-
   const all=document.createElement('div');
   all.className='legend-item active';
   all.textContent='Show All';
@@ -275,142 +242,12 @@ function buildLegend(){
   });
 }
 
-/* ===== SELECTS ===== */
-function buildSelects(){
-  roomInput.innerHTML='';
-  ROOMS.forEach(r=>{
-    const o=document.createElement('option');
-    o.value=r.id;o.textContent=r.name;
-    roomInput.appendChild(o);
-  });
-  sourceInput.innerHTML='';
-  SOURCES.forEach(s=>{
-    const o=document.createElement('option');
-    o.value=s;o.textContent=s;
-    sourceInput.appendChild(o);
-  });
-}
-
 /* ===== DAYS ===== */
 function buildDays(){
   const [y,m]=monthPicker.value.split('-').map(Number);
   DAYS=[...Array(new Date(y,m,0).getDate())]
     .map((_,i)=>`${y}-${String(m).padStart(2,'0')}-${String(i+1).padStart(2,'0')}`);
 }
-
-/* ===== CONFLICT CHECK ===== */
-function hasConflict(roomId,ci,co,ignoreId=null){
-  if(co<=ci) return true;
-  return BOOKINGS.some(b=>{
-    if(b.room_id!==roomId) return false;
-    if(ignoreId && b.id===ignoreId) return false;
-    return ci<b.check_out && co>b.check_in;
-  });
-}
-
-function validate(){
-  const roomId=+roomInput.value;
-  const ci=checkinInput.value;
-  const co=checkoutInput.value;
-  const conflict=hasConflict(roomId,ci,co,editingBooking?.id);
-  saveBtn.disabled=conflict;
-  saveBtn.textContent=conflict?'Conflict':(editingBooking?'Update':'Save');
-  conflictText.style.display=conflict?'block':'none';
-}
-
-/* ===== CLICK CELL ===== */
-function onCellClick(el){
-  const room=el.dataset.room;
-  const date=el.dataset.date;
-  const booking=getCellBooking(room,date);
-
-  document.querySelectorAll('.cell.selecting')
-    .forEach(c=>c.classList.remove('selecting'));
-
-  if(booking){
-    openEdit(booking);
-    return;
-  }
-
-  if(!selectState||selectState.room!==room){
-    selectState={room,checkin:date};
-    el.classList.add('selecting');
-    return;
-  }
-
-  let ci=selectState.checkin;
-  let co=date;
-  if(co<=ci) co=new Date(new Date(ci).getTime()+86400000).toISOString().slice(0,10);
-
-  openNew(room,ci,co);
-  selectState=null;
-}
-
-/* ===== OPEN MODAL ===== */
-function openNew(room,ci,co){
-  modalTitle.textContent='New Booking';
-  editingBooking=null;
-  roomInput.value=ROOMS.find(r=>r.name===room).id;
-  checkinInput.value=ci;
-  checkoutInput.value=co;
-
-  roomInput.disabled=true;
-  checkinInput.disabled=true;
-
-  deleteBtn.style.display='none';
-  modal.style.display='block';
-  validate();
-}
-
-function openEdit(b){
-  modalTitle.textContent='Edit Booking';
-  editingBooking=b;
-
-  roomInput.value=b.room_id;
-  checkinInput.value=b.check_in;
-  checkoutInput.value=b.check_out;
-  sourceInput.value=b.source;
-
-  roomInput.disabled=false;
-  checkinInput.disabled=false;
-
-  deleteBtn.style.display='block';
-  modal.style.display='block';
-  validate();
-}
-
-function closeModal(){
-  modal.style.display='none';
-}
-
-/* ===== SAVE / DELETE ===== */
-saveBtn.onclick=async()=>{
-  if(editingBooking){
-    await sb.from('bookings').update({
-      room_id:+roomInput.value,
-      check_in:checkinInput.value,
-      check_out:checkoutInput.value,
-      source:sourceInput.value
-    }).eq('id',editingBooking.id);
-  }else{
-    await sb.from('bookings').insert({
-      room_id:+roomInput.value,
-      check_in:checkinInput.value,
-      check_out:checkoutInput.value,
-      source:sourceInput.value
-    });
-  }
-  closeModal(); loadAll();
-};
-
-deleteBtn.onclick=async()=>{
-  await sb.from('bookings').delete().eq('id',editingBooking.id);
-  closeModal(); loadAll();
-};
-
-checkoutInput.onchange=validate;
-checkinInput.onchange=validate;
-roomInput.onchange=validate;
 
 /* ===== BOOKING LOOKUP ===== */
 function getCellBooking(room,date){
@@ -442,9 +279,14 @@ function render(){
     DAYS.forEach(d=>{
       const b=getCellBooking(r.name,d);
       let cls='cell';
-      if(b)cls+=` booked src-${norm(b.source)}`;
-      html+=`<div class="${cls}" data-room="${r.name}" data-date="${d}"
-             onclick="onCellClick(this)"></div>`;
+      let content='';
+      if(b){
+        cls+=` booked src-${norm(b.source)}`;
+        if(b.price && b.price>0){
+          content=`<div class="price">${b.price}</div>`;
+        }
+      }
+      html+=`<div class="${cls}">${content}</div>`;
     });
     html+=`</div>`;
   });
