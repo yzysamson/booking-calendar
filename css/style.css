@@ -1,205 +1,37 @@
-/* =====================================================
-   RESET / BASE
-===================================================== */
-*{
-  box-sizing:border-box;
-}
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui;background:#fff;color:#111}
 
-html, body{
-  margin:0;
-  padding:0;
-  width:100%;
-  min-height:100%;
-  font-family:system-ui, -apple-system, BlinkMacSystemFont;
-  background:#faf7f2;
-  color:#111;
-}
+/* ===== TOP ===== */
+.topbar{padding:8px;border-bottom:1px solid #e5e5e5;display:flex;gap:10px;align-items:center;overflow-x:auto}
+.topbar input{padding:4px 6px;font-size:14px}
 
-/* =====================================================
-   TOPBAR
-===================================================== */
-.topbar{
-  position:sticky;
-  top:0;
-  z-index:50;
+/* ===== LEGEND ===== */
+.legend{display:flex;gap:6px;font-size:12px;white-space:nowrap}
+.legend-item{display:flex;align-items:center;gap:4px;padding:4px 6px;border-radius:6px;cursor:pointer}
+.legend-item.active{background:#eee}
+.legend-color{width:10px;height:10px;border-radius:3px}
 
-  display:flex;
-  align-items:center;
-  gap:10px;
+/* ===== GRID ===== */
+.header,.row{display:grid}
 
-  padding:8px;
-  background:#faf7f2;
-  border-bottom:1px solid #e5e5e5;
-}
+/* ===== Y AXIS ===== */
+.room{width:88px;padding:6px;font-size:12px;background:#fafafa;border-right:1px solid #e5e5e5;position:sticky;left:0;z-index:3}
+.header .room{background:#f5f5f5;z-index:4}
 
-.topbar input{
-  font-size:14px;
-  padding:4px 6px;
-}
+/* ===== CORNER ===== */
+.corner{position:relative;width:88px;height:34px;background:#f5f5f5;color:#777;font-size:10px}
+.corner::before{content:"";position:absolute;inset:0;background:linear-gradient(45deg,transparent 49.5%,#d0d0d0 50%,transparent 50.5%)}
+.corner-date{position:absolute;top:4px;left:6px}
+.corner-room{position:absolute;bottom:4px;right:6px}
 
-/* =====================================================
-   LEGEND
-===================================================== */
-.legend{
-  display:flex;
-  align-items:center;
-  gap:12px;
+/* ===== CELL ===== */
+.cell{height:34px;border:1px solid #eee;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:12px}
+.cell.selecting{background:rgba(255,56,92,.3)}
 
-  white-space:nowrap;
-  overflow-x:auto;
-  -webkit-overflow-scrolling:touch;
-}
+/* ===== BAR ===== */
+.bar{height:34px;color:#fff;font-size:12px;display:flex;align-items:center;justify-content:center;border-radius:4px;cursor:pointer}
 
-.legend-item{
-  display:flex;
-  align-items:center;
-  gap:6px;
-
-  padding:6px 10px;
-  font-size:12px;
-  border-radius:8px;
-  cursor:pointer;
-}
-
-.legend-item.active{
-  background:#eee;
-}
-
-.legend-color{
-  width:10px;
-  height:10px;
-  border-radius:3px;
-  display:inline-block;
-}
-
-/* =====================================================
-   SCROLL CONTAINER (X + Y)
-===================================================== */
-#x-scroll{
-  position:relative;
-  width:100%;
-  overflow-x:auto;
-  overflow-y:auto;
-  -webkit-overflow-scrolling:touch;
-}
-
-/* =====================================================
-   MASK — hide ghost room on far right (iOS)
-===================================================== */
-#x-scroll::after{
-  content:"";
-  position:absolute;
-  top:0;
-  right:0;
-
-  width:88px;              /* same as room width */
-  height:100%;
-
-  background:#faf7f2;
-  pointer-events:none;
-  z-index:5;
-}
-
-/* =====================================================
-   GRID
-===================================================== */
-.header,
-.row{
-  display:grid;
-}
-
-/* =====================================================
-   ROOM (Y AXIS — STICKY)
-===================================================== */
-.room{
-  position:sticky;
-  left:0;
-  z-index:10;
-
-  width:88px;
-  min-width:88px;
-
-  padding:6px;
-  font-size:12px;
-
-  background:#fdfcf9;
-  border-right:1px solid #e5e5e5;
-}
-
-.header .room{
-  z-index:20;
-  background:#f3f1ec;
-  font-size:10px;
-}
-
-/* =====================================================
-   CORNER (Room / Date)
-===================================================== */
-.corner{
-  position:relative;
-}
-
-.corner::before{
-  content:"";
-  position:absolute;
-  inset:0;
-  background:linear-gradient(
-    45deg,
-    transparent 49.5%,
-    #ccc 50%,
-    transparent 50.5%
-  );
-}
-
-.corner-room{
-  position:absolute;
-  top:4px;
-  left:6px;
-}
-
-.corner-date{
-  position:absolute;
-  bottom:4px;
-  right:6px;
-}
-
-/* =====================================================
-   CELL
-===================================================== */
-.cell{
-  height:34px;
-  min-width:56px;
-
-  border:1px solid #eee;
-  background:#fff;
-
-  display:flex;
-  align-items:center;
-  justify-content:center;
-
-  font-size:12px;
-}
-
-/* =====================================================
-   BAR
-===================================================== */
-.bar{
-  height:34px;
-
-  display:flex;
-  align-items:center;
-  justify-content:center;
-
-  font-size:12px;
-  color:#fff;
-
-  border-radius:4px;
-  cursor:pointer;
-}
-
-/* =====================================================
-   SOURCE COLORS
-===================================================== */
+/* ===== COLORS ===== */
 .src-airbnb{background:#ff385c}
 .src-booking{background:#003580}
 .src-agoda{background:#e60023}
@@ -208,42 +40,16 @@ html, body{
 .src-walkinwayne{background:#2e8b57}
 .src-walkinsoo{background:#8b4513}
 
-/* =====================================================
-   SUMMARY
-===================================================== */
-#summary{
-  padding:10px;
-  border-top:1px solid #e5e5e5;
-  background:#faf7f2;
-}
+/* ===== SUMMARY ===== */
+#summary{border-top:1px solid #eee;padding:10px;font-size:13px}
+.summary-title{font-weight:600;margin:6px 0 4px}
+.summary-row{display:flex;justify-content:space-between;padding:4px 0;cursor:pointer}
+.summary-row:hover{background:#f6f6f6}
 
-/* =====================================================
-   MODAL (SAFE DEFAULT)
-===================================================== */
-.modal{
-  position:fixed;
-  inset:0;
-  background:rgba(0,0,0,.35);
-  display:none;
-  z-index:9999;
-}
-
-.modal-box{
-  position:absolute;
-  bottom:0;
-  left:0;
-  right:0;
-
-  background:#fff;
-  border-radius:14px 14px 0 0;
-  padding:12px;
-}
-
-/* =====================================================
-   SAFETY: FORCE VISIBILITY
-   (prevent "white screen" illusion)
-===================================================== */
-#app{
-  min-height:200px;
-}
-
+/* ===== MODAL ===== */
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.35);display:none;z-index:999}
+.modal-box{background:#fff;border-radius:14px 14px 0 0;padding:10px 12px;position:absolute;bottom:0;left:0;right:0}
+.modal-box input,.modal-box select{width:100%;height:36px;margin:4px 0;font-size:14px}
+.actions{display:flex;gap:8px}
+.actions button{flex:1}
+#saveBtn:disabled{opacity:.4}

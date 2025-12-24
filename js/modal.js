@@ -1,45 +1,31 @@
 function openNew(room,ci,co){
-  modalTitle.textContent = 'New Booking';
-  editing = null;
-
-  roomInput.value = ROOMS.find(r=>r.name===room).id;
-  checkinInput.value = ci;
-  checkoutInput.value = co;
-  priceInput.value = '';
-  remarkInput.value = '';
-
-  saveBtn.disabled = true;
-  deleteBtn.style.display = 'none';
-
-  modal.style.display = 'block';              // 🔥 必须
-  document.body.classList.add('modal-open');  // 可选但推荐
+  modalTitle.textContent='New Booking';
+  editing=null;
+  roomInput.value=ROOMS.find(r=>r.name===room).id;
+  checkinInput.value=ci;
+  checkoutInput.value=co;
+  priceInput.value='';
+  remarkInput.value='';
+  saveBtn.disabled=true;
+  deleteBtn.style.display='none';
+  modal.style.display='block';
 }
-
 
 function openEdit(id){
-  editing = BOOKINGS.find(b=>b.id===id);
-
-  modalTitle.textContent = 'Edit Booking';
-  roomInput.value = editing.room_id;
-  checkinInput.value = editing.check_in;
-  checkoutInput.value = editing.check_out;
-  sourceInput.value = editing.source;
-  priceInput.value = editing.price || '';
-  remarkInput.value = editing.remark || '';
-
-  deleteBtn.style.display = 'block';
+  editing=BOOKINGS.find(b=>b.id===id);
+  modalTitle.textContent='Edit Booking';
+  roomInput.value=editing.room_id;
+  checkinInput.value=editing.check_in;
+  checkoutInput.value=editing.check_out;
+  sourceInput.value=editing.source;
+  priceInput.value=editing.price||'';
+  remarkInput.value=editing.remark||'';
+  deleteBtn.style.display='block';
   validate();
-
-  modal.style.display = 'block';              // 🔥 必须
-  document.body.classList.add('modal-open');
+  modal.style.display='block';
 }
 
-
-function closeModal(){
-  modal.style.display = 'none';
-  document.body.classList.remove('modal-open');
-}
-
+function closeModal(){modal.style.display='none'}
 
 function validate(){
   saveBtn.disabled=!(checkoutInput.value>checkinInput.value&&Number(priceInput.value)>0);
