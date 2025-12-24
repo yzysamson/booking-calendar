@@ -298,13 +298,16 @@ function render(){
                onclick="onCellClick(this)"></div>`;
         i++;continue;
       }
-      const span=(new Date(b.check_out)-new Date(d))/86400000;
-      html+=`<div class="bar"
-                 style="grid-column:span ${span}"
-                 onclick="openEdit(${b.id})">${b.price||''}</div>`;
-      i+=span;
-    }
-    html+=`</div>`;
+      const span = (new Date(b.check_out) - new Date(d)) / 86400000;
+
+html += `
+  <div class="bar src-${norm(b.source)}"
+       style="grid-column:span ${span}"
+       onclick="openEdit(${b.id})">
+    ${b.price || ''}
+  </div>
+`;
+
   });
 
   app.innerHTML=html;
