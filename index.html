@@ -28,7 +28,7 @@ body{
 /* ===== LEGEND / FILTER ===== */
 .legend{
   display:flex;
-  gap:10px;
+  gap:8px;
   font-size:12px;
   white-space:nowrap
 }
@@ -40,9 +40,7 @@ body{
   border-radius:6px;
   cursor:pointer
 }
-.legend-item.active{
-  background:#eee
-}
+.legend-item.active{background:#eee}
 .legend-color{
   width:12px;
   height:12px;
@@ -61,9 +59,9 @@ body{
 
 /* ===== Y AXIS ===== */
 .room{
-  width:120px;
-  padding:6px 8px;
-  font-size:13px;
+  width:96px;                /* 👈 缩小 */
+  padding:6px 6px;
+  font-size:12px;
   background:#fafafa;
   border-right:1px solid #e5e5e5;
   position:sticky;
@@ -101,6 +99,10 @@ body{
   height:36px;
   border:1px solid #eee;
   cursor:pointer;
+  display:flex;
+  align-items:center;        /* 👈 X 轴居中 */
+  justify-content:center;    /* 👈 X 轴居中 */
+  font-size:12px;            /* 👈 字体统一 */
 }
 .cell.booked{color:#fff}
 .cell.selecting::after{
@@ -148,6 +150,7 @@ body{
 }
 .actions{display:flex;gap:8px}
 .actions button{flex:1}
+.actions button:disabled{opacity:.4}
 </style>
 </head>
 
@@ -165,13 +168,13 @@ body{
 <!-- MODAL -->
 <div class="modal" id="modal">
   <div class="modal-box">
-    <h3 id="modalTitle">New Booking</h3>
+    <h3 id="modalTitle"></h3>
 
     <label>Room</label>
-    <input id="roomInput" disabled>
+    <select id="roomInput"></select>
 
     <label>Check-in</label>
-    <input type="date" id="checkinInput" disabled>
+    <input type="date" id="checkinInput">
 
     <label>Check-out</label>
     <input type="date" id="checkoutInput">
@@ -200,39 +203,39 @@ const SOURCES = [
 ];
 
 let ROOMS=[], BOOKINGS=[], DAYS=[];
-let FILTER = new Set();
-let selectState = null;
-let editingBooking = null;
+let FILTER=new Set();
+let selectState=null;
+let editingBooking=null;
 
-const app = document.getElementById('app');
-const legend = document.getElementById('legend');
-const modal = document.getElementById('modal');
-const monthPicker = document.getElementById('monthPicker');
+const app=document.getElementById('app');
+const legend=document.getElementById('legend');
+const modal=document.getElementById('modal');
 
-const roomInput = document.getElementById('roomInput');
-const checkinInput = document.getElementById('checkinInput');
-const checkoutInput = document.getElementById('checkoutInput');
-const sourceInput = document.getElementById('sourceInput');
-const saveBtn = document.getElementById('saveBtn');
-const deleteBtn = document.getElementById('deleteBtn');
-const modalTitle = document.getElementById('modalTitle');
+const roomInput=document.getElementById('roomInput');
+const checkinInput=document.getElementById('checkinInput');
+const checkoutInput=document.getElementById('checkoutInput');
+const sourceInput=document.getElementById('sourceInput');
+const saveBtn=document.getElementById('saveBtn');
+const deleteBtn=document.getElementById('deleteBtn');
+const modalTitle=document.getElementById('modalTitle');
+const monthPicker=document.getElementById('monthPicker');
 
 /* ===== INIT ===== */
-monthPicker.value = new Date().toISOString().slice(0,7);
-monthPicker.onchange = loadAll;
+monthPicker.value=new Date().toISOString().slice(0,7);
+monthPicker.onchange=loadAll;
 loadAll();
 
 /* ===== LOAD ===== */
 async function loadAll(){
-  ROOMS = (await sb.from('rooms').select('*').order('id')).data || [];
-  BOOKINGS = (await sb.from('booking_view').select('*')).data || [];
+  ROOMS=(await sb.from('rooms').select('*').order('id')).data||[];
+  BOOKINGS=(await sb.from('booking_view').select('*')).data||[];
   buildLegend();
   buildDays();
-  buildSourceSelect();
+  buildSelects();
   render();
 }
 
-/* ===== LEGEND / FILTER ===== */
+/* ===== LEGEND ===== */
 function buildLegend(){
   legend.innerHTML='';
   SOURCES.forEach(s=>{
@@ -240,7 +243,7 @@ function buildLegend(){
     el.className='legend-item';
     el.innerHTML=`<span class="legend-color src-${norm(s)}"></span>${s}`;
     el.onclick=()=>{
-      FILTER.has(s) ? FILTER.delete(s) : FILTER.add(s);
+      FILTER.has(s)?FILTER.delete(s):FILTER.add(s);
       el.classList.toggle('active');
       render();
     };
@@ -248,7 +251,14 @@ function buildLegend(){
   });
 }
 
-function buildSourceSelect(){
+/* ===== SELECTS ===== */
+function buildSelects(){
+  roomInput.innerHTML='';
+  ROOMS.forEach(r=>{
+    const o=document.createElement('option');
+    o.value=r.id;o.textContent=r.name;
+    roomInput.appendChild(o);
+  });
   sourceInput.innerHTML='';
   SOURCES.forEach(s=>{
     const o=document.createElement('option');
@@ -259,27 +269,34 @@ function buildSourceSelect(){
 
 /* ===== DAYS ===== */
 function buildDays(){
-  const [y,m] = monthPicker.value.split('-').map(Number);
-  DAYS = Array.from({length:new Date(y,m,0).getDate()},(_,i)=>
-    `${y}-${String(m).padStart(2,'0')}-${String(i+1).padStart(2,'0')}`
-  );
+  const [y,m]=monthPicker.value.split('-').map(Number);
+  DAYS=[...Array(new Date(y,m,0).getDate())]
+    .map((_,i)=>`${y}-${String(m).padStart(2,'0')}-${String(i+1).padStart(2,'0')}`);
 }
 
-/* ===== BOOKING CHECK ===== */
-function getCellBooking(room,date){
-  return BOOKINGS.find(b =>
-    b.room === room &&
-    date >= b.check_in &&
-    date < b.check_out &&
-    (FILTER.size===0 || FILTER.has(b.source))
-  );
+/* ===== CONFLICT CHECK ===== */
+function hasConflict(roomId,ci,co,ignoreId=null){
+  return BOOKINGS.some(b=>{
+    if(b.room_id!==roomId) return false;
+    if(ignoreId && b.id===ignoreId) return false;
+    return ci < b.check_out && co > b.check_in;
+  });
+}
+
+function validate(){
+  const roomId=+roomInput.value;
+  const ci=checkinInput.value;
+  const co=checkoutInput.value;
+  const conflict=hasConflict(roomId,ci,co,editingBooking?.id);
+  saveBtn.disabled=conflict;
+  saveBtn.textContent=conflict?'Conflict':(editingBooking?'Update':'Save');
 }
 
 /* ===== CLICK CELL ===== */
 function onCellClick(el){
-  const room = el.dataset.room;
-  const date = el.dataset.date;
-  const booking = getCellBooking(room,date);
+  const room=el.dataset.room;
+  const date=el.dataset.date;
+  const booking=getCellBooking(room,date);
 
   document.querySelectorAll('.cell.selecting')
     .forEach(c=>c.classList.remove('selecting'));
@@ -289,61 +306,59 @@ function onCellClick(el){
     return;
   }
 
-  if(!selectState || selectState.room !== room){
-    selectState = { room, checkin: date };
+  if(!selectState||selectState.room!==room){
+    selectState={room,checkin:date};
     el.classList.add('selecting');
     return;
   }
 
-  let ci = selectState.checkin;
-  let co = date;
-  if(co <= ci){ [ci,co] = [co,ci]; }
-
-  openNew(selectState.room, ci, co);
-  selectState = null;
+  let ci=selectState.checkin,co=date;
+  if(co<=ci)[ci,co]=[co,ci];
+  openNew(room,ci,co);
+  selectState=null;
 }
 
-/* ===== MODAL ===== */
-function openNew(room, ci, co){
+/* ===== OPEN MODAL ===== */
+function openNew(room,ci,co){
   modalTitle.textContent='New Booking';
-  editingBooking = null;
-  roomInput.value=room;
+  editingBooking=null;
+  roomInput.value=ROOMS.find(r=>r.name===room).id;
   checkinInput.value=ci;
   checkoutInput.value=co;
   deleteBtn.style.display='none';
   modal.style.display='block';
+  validate();
 }
 
 function openEdit(b){
   modalTitle.textContent='Edit Booking';
   editingBooking=b;
-  roomInput.value=b.room;
+  roomInput.value=b.room_id;
   checkinInput.value=b.check_in;
   checkoutInput.value=b.check_out;
   sourceInput.value=b.source;
   deleteBtn.style.display='block';
   modal.style.display='block';
+  validate();
 }
 
-function closeModal(){
-  modal.style.display='none';
-}
+function closeModal(){modal.style.display='none'}
 
 /* ===== SAVE / DELETE ===== */
 saveBtn.onclick=async()=>{
   if(editingBooking){
     await sb.from('bookings').update({
-      room_id: editingBooking.room_id,
-      check_in: checkinInput.value,
-      check_out: checkoutInput.value,
-      source: sourceInput.value
+      room_id:+roomInput.value,
+      check_in:checkinInput.value,
+      check_out:checkoutInput.value,
+      source:sourceInput.value
     }).eq('id',editingBooking.id);
   }else{
     await sb.from('bookings').insert({
-      room_id: ROOMS.find(r=>r.name===roomInput.value).id,
-      check_in: checkinInput.value,
-      check_out: checkoutInput.value,
-      source: sourceInput.value
+      room_id:+roomInput.value,
+      check_in:checkinInput.value,
+      check_out:checkoutInput.value,
+      source:sourceInput.value
     });
   }
   closeModal(); loadAll();
@@ -354,10 +369,24 @@ deleteBtn.onclick=async()=>{
   closeModal(); loadAll();
 };
 
+checkoutInput.onchange=validate;
+checkinInput.onchange=validate;
+roomInput.onchange=validate;
+
+/* ===== BOOKING LOOKUP ===== */
+function getCellBooking(room,date){
+  return BOOKINGS.find(b=>
+    b.room===room &&
+    date>=b.check_in &&
+    date<b.check_out &&
+    (FILTER.size===0||FILTER.has(b.source))
+  );
+}
+
 /* ===== RENDER ===== */
 function render(){
   let html='';
-  const cols = `120px repeat(${DAYS.length},56px)`;
+  const cols=`96px repeat(${DAYS.length},56px)`;
 
   html+=`
   <div class="header" style="grid-template-columns:${cols}">
@@ -372,15 +401,11 @@ function render(){
     html+=`<div class="row" style="grid-template-columns:${cols}">
       <div class="room">${r.name}</div>`;
     DAYS.forEach(d=>{
-      const b = getCellBooking(r.name,d);
+      const b=getCellBooking(r.name,d);
       let cls='cell';
-      if(b) cls+=` booked src-${norm(b.source)}`;
-      html+=`
-        <div class="${cls}"
-             data-room="${r.name}"
-             data-date="${d}"
-             onclick="onCellClick(this)">
-        </div>`;
+      if(b)cls+=` booked src-${norm(b.source)}`;
+      html+=`<div class="${cls}" data-room="${r.name}" data-date="${d}"
+             onclick="onCellClick(this)"></div>`;
     });
     html+=`</div>`;
   });
@@ -388,9 +413,7 @@ function render(){
   app.innerHTML=html;
 }
 
-function norm(s){
-  return s.toLowerCase().replace(/[^a-z]/g,'');
-}
+function norm(s){return s.toLowerCase().replace(/[^a-z]/g,'')}
 </script>
 
 </body>
