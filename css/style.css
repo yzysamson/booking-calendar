@@ -1,45 +1,103 @@
 /* =====================================================
-   GLOBAL
+   RESET / BASE
 ===================================================== */
-*{ box-sizing:border-box }
+*{
+  box-sizing:border-box;
+}
 
 html, body{
   margin:0;
   padding:0;
   width:100%;
-  height:100%;
-  font-family:system-ui, -apple-system;
+  min-height:100%;
+  font-family:system-ui, -apple-system, BlinkMacSystemFont;
   background:#faf7f2;
+  color:#111;
 }
 
 /* =====================================================
    TOPBAR
 ===================================================== */
 .topbar{
-  position:fixed;
-  top:0; left:0; right:0;
-  height:72px;
-  padding:8px;
+  position:sticky;
+  top:0;
+  z-index:50;
+
   display:flex;
-  gap:10px;
   align-items:center;
+  gap:10px;
+
+  padding:8px;
   background:#faf7f2;
   border-bottom:1px solid #e5e5e5;
-  z-index:100;
+}
+
+.topbar input{
+  font-size:14px;
+  padding:4px 6px;
 }
 
 /* =====================================================
-   CALENDAR SCROLL AREA
+   LEGEND
+===================================================== */
+.legend{
+  display:flex;
+  align-items:center;
+  gap:12px;
+
+  white-space:nowrap;
+  overflow-x:auto;
+  -webkit-overflow-scrolling:touch;
+}
+
+.legend-item{
+  display:flex;
+  align-items:center;
+  gap:6px;
+
+  padding:6px 10px;
+  font-size:12px;
+  border-radius:8px;
+  cursor:pointer;
+}
+
+.legend-item.active{
+  background:#eee;
+}
+
+.legend-color{
+  width:10px;
+  height:10px;
+  border-radius:3px;
+  display:inline-block;
+}
+
+/* =====================================================
+   SCROLL CONTAINER (X + Y)
 ===================================================== */
 #x-scroll{
-  position:fixed;
-  top:90px;            /* topbar + spacing */
-  bottom:120px;        /* summary */
-  left:0; right:0;
-
+  position:relative;
+  width:100%;
   overflow-x:auto;
-  overflow-y:hidden;
+  overflow-y:auto;
   -webkit-overflow-scrolling:touch;
+}
+
+/* =====================================================
+   MASK — hide ghost room on far right (iOS)
+===================================================== */
+#x-scroll::after{
+  content:"";
+  position:absolute;
+  top:0;
+  right:0;
+
+  width:88px;              /* same as room width */
+  height:100%;
+
+  background:#faf7f2;
+  pointer-events:none;
+  z-index:5;
 }
 
 /* =====================================================
@@ -51,18 +109,16 @@ html, body{
 }
 
 /* =====================================================
-   ROOM (STICKY Y AXIS)
+   ROOM (Y AXIS — STICKY)
 ===================================================== */
 .room{
   position:sticky;
   left:0;
-  z-index:5;
+  z-index:10;
 
   width:88px;
   min-width:88px;
-  max-width:88px;
 
-  height:34px;
   padding:6px;
   font-size:12px;
 
@@ -70,15 +126,14 @@ html, body{
   border-right:1px solid #e5e5e5;
 }
 
-/* header room above all */
 .header .room{
-  z-index:10;
+  z-index:20;
   background:#f3f1ec;
   font-size:10px;
 }
 
 /* =====================================================
-   CORNER (DATE / ROOM)
+   CORNER (Room / Date)
 ===================================================== */
 .corner{
   position:relative;
@@ -96,33 +151,33 @@ html, body{
   );
 }
 
-.corner-date{
+.corner-room{
   position:absolute;
   top:4px;
   left:6px;
 }
 
-.corner-room{
+.corner-date{
   position:absolute;
   bottom:4px;
   right:6px;
 }
 
 /* =====================================================
-   CELLS
+   CELL
 ===================================================== */
 .cell{
   height:34px;
+  min-width:56px;
+
   border:1px solid #eee;
+  background:#fff;
+
   display:flex;
   align-items:center;
   justify-content:center;
-  font-size:12px;
-  background:#fff;
-}
 
-.cell.selecting{
-  background:rgba(255,56,92,.25);
+  font-size:12px;
 }
 
 /* =====================================================
@@ -130,11 +185,14 @@ html, body{
 ===================================================== */
 .bar{
   height:34px;
+
   display:flex;
   align-items:center;
   justify-content:center;
+
   font-size:12px;
   color:#fff;
+
   border-radius:4px;
   cursor:pointer;
 }
@@ -154,221 +212,14 @@ html, body{
    SUMMARY
 ===================================================== */
 #summary{
-  position: sticky;
-  bottom: 0;
-  background:#faf7f2;
-  z-index: 10;
-}
-
-
-/* =====================================================
-   MODAL
-===================================================== */
-.modal{
-  position:fixed;
-  top:0;
-  left:0;
-  width:100vw;
-  height:100vh;
-
-  background:rgba(0,0,0,.35);
-  display:none;
-
-  z-index:2147483647;   /* 🔥 彻底跳出所有 stacking context */
-  pointer-events:auto;
-}
-
-.modal{
-  position:fixed;
-  inset:0;
-  background:rgba(0,0,0,.35);
-  display:none;
-
-  z-index:2147483647;   /* 🔥 压过所有 sticky / fixed */
-}
-
-.modal-box{
-  position:absolute;
-  bottom:0;
-  left:0;
-  right:0;
-
-  background:#fff;
-  border-radius:14px 14px 0 0;
-  padding:12px;
-}
-
-.corner-room{
-  position:absolute;
-  top:4px;
-  left:6px;
-}
-
-.corner-date{
-  position:absolute;
-  bottom:4px;
-  right:6px;
-}
-
-/* ===== LEGEND HARD RESET ===== */
-.topbar{
-  display:flex;
-  align-items:center;
-}
-
-.legend{
-  display:flex !important;
-  align-items:center;
-  gap:12px;
-  font-size:12px;
-  white-space:nowrap;
-  overflow-x:auto;
-  -webkit-overflow-scrolling:touch;
-}
-
-.legend-item{
-  display:flex !important;
-  align-items:center;
-  gap:6px;
-  padding:6px 10px;
-  border-radius:8px;
-  cursor:pointer;
-}
-
-.legend-color{
-  width:10px;
-  height:10px;
-  border-radius:3px;
-  display:inline-block;
-}
-
-
-body.modal-open .room{
-  position:sticky;     /* 强制 sticky 不回退 */
-}
-
-#app{
-  position:relative;
-  isolation:isolate;  /* 🔥 新 stacking context，防止被 modal 影响 */
-}
-
-/* ===============================
-   BASE
-================================ */
-*{ box-sizing:border-box }
-
-body{
-  margin:0;
-  font-family:system-ui, -apple-system;
-  background:#faf7f2;
-  color:#111;
-}
-
-/* ===============================
-   TOPBAR
-================================ */
-.topbar{
-  position:sticky;
-  top:0;
-  z-index:50;
-  display:flex;
-  align-items:center;
-  gap:10px;
-  padding:8px;
-  background:#faf7f2;
-  border-bottom:1px solid #e5e5e5;
-}
-
-.legend{
-  display:flex;
-  gap:12px;
-  white-space:nowrap;
-  overflow-x:auto;
-}
-
-/* ===============================
-   CALENDAR SCROLL
-================================ */
-#x-scroll{
-  overflow-x:auto;
-  overflow-y:auto;
-}
-
-/* ===============================
-   GRID
-================================ */
-.header,
-.row{
-  display:grid;
-}
-
-/* ===============================
-   STICKY ROOM (Y AXIS)
-================================ */
-.room{
-  position:sticky;
-  left:0;
-  z-index:10;
-  width:88px;
-  background:#fdfcf9;
-  border-right:1px solid #e5e5e5;
-  padding:6px;
-  font-size:12px;
-}
-
-.header .room{
-  z-index:20;
-  background:#f3f1ec;
-  font-size:10px;
-}
-
-/* ===============================
-   CELLS
-================================ */
-.cell{
-  height:34px;
-  border:1px solid #eee;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  background:#fff;
-}
-
-/* ===============================
-   BAR
-================================ */
-.bar{
-  height:34px;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  color:#fff;
-  border-radius:4px;
-}
-
-/* ===============================
-   COLORS
-================================ */
-.src-airbnb{background:#ff385c}
-.src-booking{background:#003580}
-.src-agoda{background:#e60023}
-.src-trip{background:#ff6f00}
-.src-slh{background:#6a5acd}
-.src-walkinwayne{background:#2e8b57}
-.src-walkinsoo{background:#8b4513}
-
-/* ===============================
-   SUMMARY
-================================ */
-#summary{
   padding:10px;
   border-top:1px solid #e5e5e5;
   background:#faf7f2;
 }
 
-/* ===============================
-   MODAL
-================================ */
+/* =====================================================
+   MODAL (SAFE DEFAULT)
+===================================================== */
 .modal{
   position:fixed;
   inset:0;
@@ -382,56 +233,17 @@ body{
   bottom:0;
   left:0;
   right:0;
+
   background:#fff;
   border-radius:14px 14px 0 0;
   padding:12px;
 }
 
-/* ===== Prevent seeing duplicated room on far right ===== */
-#x-scroll{
-  position: relative;
-  overflow-x: auto;
-  overflow-y: auto;
-}
-
-/* 裁掉 sticky room 在最右侧“露出来”的部分 */
-#x-scroll::after{
-  content:"";
-  position:absolute;
-  top:0;
-  right:0;
-  width:88px;              /* 与 room 宽度一致 */
-  height:100%;
-  background:#faf7f2;      /* 与页面背景一致 */
-  pointer-events:none;
-}
-
-/* =========================================
-   iOS SAFARI FIX
-   Prevent sticky room showing on far right
-========================================= */
-
-/* 横向滚动容器 */
-#x-scroll{
-  position: relative;
-  overflow-x: auto;
-  overflow-y: auto;
-}
-
-/* 用遮罩盖住最右侧多余 room */
-#x-scroll::after{
-  content:"";
-  position:absolute;
-  top:0;
-  right:0;
-  width:88px;              /* 与 .room 宽度一致 */
-  height:100%;
-  background:#faf7f2;      /* 页面背景色 */
-  pointer-events:none;
-  z-index:5;
-}
-
-/* 只允许日期区产生横向滚动 */
+/* =====================================================
+   SAFETY: FORCE VISIBILITY
+   (prevent "white screen" illusion)
+===================================================== */
 #app{
-  min-width: calc(88px + (56px * 31)); /* 31 = 最大天数 */
+  min-height:200px;
 }
+
