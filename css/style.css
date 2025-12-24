@@ -259,7 +259,7 @@ html, body{
 /* ========== MAIN SCREEN ========== */
 .screen{
   position:fixed;
-  top:var(--topbar-h);     /* ← 就是这里 */
+  top:calc(var(--topbar-h) + 12px);  /* 👈 往下推一点 */
   bottom:var(--summary-h);
   left:0;
   right:0;
@@ -359,4 +359,30 @@ html, body{
   border-top:1px solid #e5e5e5;
   overflow-y:auto;
   padding:10px;
+}
+
+/* =========================
+   DISABLE LANDSCAPE MODE
+========================= */
+@media screen and (orientation: landscape) {
+  body::before{
+    content:"Please rotate your device to portrait mode";
+    position:fixed;
+    inset:0;
+    background:#faf7f2;
+    color:#333;
+    font-size:16px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    z-index:9999;
+    text-align:center;
+    padding:20px;
+  }
+
+  .topbar,
+  .screen,
+  #summary{
+    display:none;
+  }
 }
