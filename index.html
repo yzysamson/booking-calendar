@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Booking Calendar</title>
 
 <style>
@@ -10,10 +10,8 @@
   --row-h: 32px;
   --cell-w: 56px;
   --room-w: 90px;
-
-  --free: #FFF8EB;
-  --booked: #F24E7C;
   --border: #ddd;
+  --free: #FFF8EB;
 }
 
 * { box-sizing: border-box; }
@@ -25,18 +23,17 @@ body {
   background: #fff;
 }
 
-/* Top bar */
+/* ===== Top ===== */
 .topbar {
   padding: 8px 10px;
   border-bottom: 1px solid var(--border);
 }
 
-/* Calendar wrapper */
+/* ===== Calendar ===== */
 .wrapper {
   overflow-x: auto;
 }
 
-/* Grid */
 .header,
 .row {
   display: grid;
@@ -44,7 +41,6 @@ body {
   grid-auto-columns: min-content;
 }
 
-/* Room column */
 .room-col {
   width: var(--room-w);
   min-width: var(--room-w);
@@ -56,27 +52,7 @@ body {
   font-size: 13px;
 }
 
-/* Date cell */
-.cell {
-  width: var(--cell-w);
-  height: var(--row-h);
-  border: 1px solid var(--border);
-  text-align: center;
-  font-size: 12px;
-  user-select: none;
-  cursor: pointer;
-}
-
-/* States */
-.free { background: var(--free); }
-.booked { background: var(--booked); color: #fff; }
-
-.selected {
-  outline: 2px solid #34C759;
-  outline-offset: -2px;
-}
-
-/* Desktop: sticky room */
+/* Desktop sticky room */
 @media (min-width: 769px) {
   .room-col {
     position: sticky;
@@ -85,27 +61,35 @@ body {
   }
 }
 
-/* Mobile UX fixes */
-@media (max-width: 768px) {
-  .room-col {
-    position: relative;
-    left: auto;
-    z-index: 1;
-  }
-  .cell:hover,
-  .cell:active {
-    background: inherit;
-  }
+.cell {
+  width: var(--cell-w);
+  height: var(--row-h);
+  border: 1px solid var(--border);
+  text-align: center;
+  font-size: 12px;
+  cursor: pointer;
+  user-select: none;
 }
+
+.free { background: var(--free); }
+.booked { color: #fff; }
 
 /* Prevent room highlight */
 .room-col:hover,
-.room-col:active,
 .row:hover .room-col {
   background: #fafafa !important;
 }
 
-/* Modal */
+/* ===== Source colors ===== */
+.src-booking { background:#003580; }
+.src-trip { background:#ff6f00; }
+.src-agoda { background:#e60023; }
+.src-airbnb { background:#ff385c; }
+.src-slh { background:#6a5acd; }
+.src-walkinwayne { background:#2e8b57; }
+.src-walkinsoo { background:#4682b4; }
+
+/* ===== Modal ===== */
 .modal {
   display: none;
   position: fixed;
@@ -128,11 +112,32 @@ body {
 }
 
 .modal-box input,
-.modal-box select,
 .modal-box button {
   width: 100%;
   height: 34px;
   margin-bottom: 8px;
+}
+
+/* ===== Source buttons ===== */
+.source-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.source-btn {
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  border: 1px solid #ccc;
+  background: #fff;
+  cursor: pointer;
+}
+
+.source-btn.active {
+  border-color: transparent;
+  color: #fff;
 }
 </style>
 </head>
@@ -145,13 +150,16 @@ body {
 
 <div class="wrapper" id="app"></div>
 
-<!-- Modal -->
+<!-- ===== Modal ===== -->
 <div class="modal" id="modal">
   <div class="modal-box">
     <h3 id="modalTitle">Booking</h3>
 
     <label>Room</label>
-    <select id="roomInput"></select>
+    <div id="roomDisplay" style="margin-bottom:8px;font-weight:600;"></div>
+
+    <label>Source</label>
+    <div id="sourceGroup" class="source-group"></div>
 
     <label>Check-in</label>
     <input id="checkInInput" readonly>
@@ -166,7 +174,10 @@ body {
 </div>
 
 <script>
-  const SOURCES = [
+/* ===== CONFIG ===== */
+const API_URL = 'PASTE_YOUR_APPS_SCRIPT_URL_HERE';
+
+const SOURCES = [
   "Booking",
   "Trip",
   "Agoda",
@@ -176,239 +187,153 @@ body {
   "Walk-in (Soo)"
 ];
 
-/* ================= CONFIG ================= */
-const API_URL = 'https://script.google.com/macros/s/AKfycbxd5Ri0S06IsjqQ6BSNx0uGxzLJyTZGf-0asPxszpE2vvUZOT6wDwTAlZRQPupzTVTLZg/exec';
+/* ===== STATE ===== */
+let ROOMS=[], BOOKINGS=[], BOOKED_MAP={}, DAYS=[];
+let CURRENT_ROOM=null, CURRENT_SOURCE=null, EDIT_BOOKING=null;
 
-/* ================= STATE ================= */
-let ROOMS = [];
-let BOOKINGS = [];
-let BOOKED_MAP = {};
-let DAYS = [];
-
-let SELECT_ROOM = null;
-let SELECT_START = null;
-let EDIT_BOOKING = null;
-
-/* ================= INIT ================= */
+/* ===== INIT ===== */
 const app = document.getElementById('app');
 const monthPicker = document.getElementById('monthPicker');
-
 monthPicker.value = new Date().toISOString().slice(0,7);
-monthPicker.addEventListener('change', load);
+monthPicker.onchange = load;
 
 load();
 
-/* ================= LOAD ================= */
-function load() {
-  fetch(API_URL)
-    .then(r => r.json())
-    .then(data => {
-      ROOMS = data.rooms;
-      BOOKINGS = data.bookings;
-      BOOKED_MAP = buildBookedMap(BOOKINGS);
-      DAYS = buildDays(monthPicker.value);
-      render();
-    });
+/* ===== LOAD ===== */
+function load(){
+  fetch(API_URL).then(r=>r.json()).then(data=>{
+    ROOMS=data.rooms;
+    BOOKINGS=data.bookings;
+    BOOKED_MAP=buildMap(BOOKINGS);
+    DAYS=buildDays(monthPicker.value);
+    render();
+  });
 }
 
-function buildDays(month) {
-  const [y,m] = month.split('-').map(Number);
-  const total = new Date(y, m, 0).getDate();
-  return Array.from({length: total}, (_,i) =>
-    `${y}-${String(m).padStart(2,'0')}-${String(i+1).padStart(2,'0')}`
+function buildDays(m){
+  const [y,mo]=m.split('-').map(Number);
+  return Array.from({length:new Date(y,mo,0).getDate()},(_,i)=>
+    `${y}-${String(mo).padStart(2,'0')}-${String(i+1).padStart(2,'0')}`
   );
 }
 
-function buildBookedMap(bookings) {
-  const map = {};
-  bookings.forEach(b => {
-    let d = new Date(b.checkIn);
-    const end = new Date(b.checkOut);
-    while (d < end) {
-      map[`${b.room}|${d.toISOString().slice(0,10)}`] = b;
+function buildMap(bks){
+  const map={};
+  bks.forEach(b=>{
+    let d=new Date(b.checkIn),e=new Date(b.checkOut);
+    while(d<e){
+      map[`${b.room}|${d.toISOString().slice(0,10)}`]=b;
       d.setDate(d.getDate()+1);
     }
   });
   return map;
 }
 
-/* ================= RENDER ================= */
-function render() {
-  app.innerHTML = '';
-
-  // Header
-  const header = document.createElement('div');
-  header.className = 'header';
-  header.appendChild(document.createElement('div')).className = 'room-col';
-
-  DAYS.forEach(d => {
-    const c = document.createElement('div');
-    c.className = 'cell';
-    c.textContent = d.slice(8);
+/* ===== RENDER ===== */
+function render(){
+  app.innerHTML='';
+  const header=document.createElement('div');
+  header.className='header';
+  header.appendChild(document.createElement('div')).className='room-col';
+  DAYS.forEach(d=>{
+    const c=document.createElement('div');
+    c.className='cell';
+    c.textContent=d.slice(8);
     header.appendChild(c);
   });
   app.appendChild(header);
 
-  // Rows
-  ROOMS.forEach(room => {
-    const row = document.createElement('div');
-    row.className = 'row';
+  ROOMS.forEach(room=>{
+    const row=document.createElement('div');
+    row.className='row';
+    const r=document.createElement('div');
+    r.className='room-col';
+    r.textContent=room;
+    row.appendChild(r);
 
-    const label = document.createElement('div');
-    label.className = 'room-col';
-    label.textContent = room;
-    row.appendChild(label);
-
-    DAYS.forEach(day => {
-      const c = document.createElement('div');
-      c.className = 'cell ' + (BOOKED_MAP[`${room}|${day}`] ? 'booked' : 'free');
-      c.addEventListener('click', () => onCellClick(room, day));
+    DAYS.forEach(day=>{
+      const key=`${room}|${day}`;
+      const c=document.createElement('div');
+      if(BOOKED_MAP[key]){
+        const s=BOOKED_MAP[key].source.toLowerCase().replace(/[^a-z]/g,'');
+        c.className=`cell booked src-${s}`;
+      }else{
+        c.className='cell free';
+      }
+      c.onclick=()=>cellClick(room,day);
       row.appendChild(c);
     });
-
     app.appendChild(row);
   });
 }
 
-/* ================= INTERACTION ================= */
-function onCellClick(room, day) {
-  const booking = BOOKED_MAP[`${room}|${day}`];
-
-  if (booking) {
-    openEdit(booking);
-    return;
-  }
-
-  if (!SELECT_START || SELECT_ROOM !== room) {
-    clearSelection();
-    SELECT_ROOM = room;
-    SELECT_START = day;
-    highlight(room, day, day);
-    return;
-  }
-
-  if (day > SELECT_START) {
-    openNew(room, SELECT_START, day);
-    clearSelection();
-  } else {
-    SELECT_START = day;
-    highlight(room, day, day);
-  }
+/* ===== INTERACTION ===== */
+function cellClick(room,day){
+  const b=BOOKED_MAP[`${room}|${day}`];
+  if(b){ openEdit(b); return; }
+  CURRENT_ROOM=room;
+  document.getElementById('roomDisplay').textContent=room;
+  renderSources(SOURCES[0]);
+  document.getElementById('checkInInput').value=day;
+  document.getElementById('checkOutInput').value=day;
+  EDIT_BOOKING=null;
+  document.getElementById('modal').style.display='block';
 }
 
-function highlight(room, start, end) {
-  document.querySelectorAll('.cell').forEach(c => c.classList.remove('selected'));
-  document.querySelectorAll('.row').forEach(r => {
-    if (r.firstChild.textContent !== room) return;
-    r.querySelectorAll('.cell').forEach((c,i) => {
-      const d = DAYS[i];
-      if (d >= start && d <= end) c.classList.add('selected');
-    });
+/* ===== SOURCE ===== */
+function renderSources(selected){
+  const g=document.getElementById('sourceGroup');
+  g.innerHTML='';
+  SOURCES.forEach(s=>{
+    const b=document.createElement('div');
+    b.className=`source-btn src-${s.toLowerCase().replace(/[^a-z]/g,'')}`;
+    b.textContent=s;
+    if(s===selected){ b.classList.add('active'); CURRENT_SOURCE=s; }
+    b.onclick=()=>{
+      CURRENT_SOURCE=s;
+      g.querySelectorAll('.source-btn').forEach(x=>x.classList.remove('active'));
+      b.classList.add('active');
+    };
+    g.appendChild(b);
   });
 }
 
-function clearSelection() {
-  SELECT_ROOM = null;
-  SELECT_START = null;
-  document.querySelectorAll('.cell').forEach(c => c.classList.remove('selected'));
+/* ===== MODAL ===== */
+function openEdit(b){
+  EDIT_BOOKING=b;
+  CURRENT_ROOM=b.room;
+  document.getElementById('roomDisplay').textContent=b.room;
+  renderSources(b.source);
+  checkInInput.value=b.checkIn;
+  checkOutInput.value=b.checkOut;
+  deleteBtn.style.display='block';
+  modal.style.display='block';
 }
 
-/* ================= MODAL ================= */
-const modal = document.getElementById('modal');
-const roomInput = document.getElementById('roomInput');
-const checkInInput = document.getElementById('checkInInput');
-const checkOutInput = document.getElementById('checkOutInput');
-const saveBtn = document.getElementById('saveBtn');
-const deleteBtn = document.getElementById('deleteBtn');
-const modalTitle = document.getElementById('modalTitle');
-
-function openNew(room, ci, co) {
-  EDIT_BOOKING = null;
-  modalTitle.textContent = 'New Booking';
-  deleteBtn.style.display = 'none';
-  fillRooms(room);
-  checkInInput.value = ci;
-  checkOutInput.value = co;
-  modal.style.display = 'block';
+function closeModal(){
+  modal.style.display='none';
 }
 
-function openEdit(b) {
-  EDIT_BOOKING = b;
-  modalTitle.textContent = 'Edit Booking';
-  deleteBtn.style.display = 'block';
-  fillRooms(b.room);
-  checkInInput.value = b.checkIn;
-  checkOutInput.value = b.checkOut;
-  modal.style.display = 'block';
-}
-
-function fillRooms(selected) {
-  roomInput.innerHTML = '';
-  ROOMS.forEach(r => {
-    const o = document.createElement('option');
-    o.value = r;
-    o.textContent = r;
-    if (r === selected) o.selected = true;
-    roomInput.appendChild(o);
-  });
-}
-
-function closeModal() {
-  modal.style.display = 'none';
-  EDIT_BOOKING = null;
-}
-
-/* ================= SAVE / DELETE (NO RELOAD) ================= */
-saveBtn.onclick = () => {
-  const payload = EDIT_BOOKING ? {
-    action: 'update',
-    old: EDIT_BOOKING,
-    room: roomInput.value,
-    checkIn: checkInInput.value,
-    checkOut: checkOutInput.value
-  } : {
-    action: 'create',
-    room: roomInput.value,
-    checkIn: checkInInput.value,
-    checkOut: checkOutInput.value
-  };
-
-  fetch(API_URL, { method:'POST', body: JSON.stringify(payload) })
-    .then(() => {
-      if (EDIT_BOOKING) {
-        BOOKINGS = BOOKINGS.filter(b =>
-          !(b.room === EDIT_BOOKING.room &&
-            b.checkIn === EDIT_BOOKING.checkIn &&
-            b.checkOut === EDIT_BOOKING.checkOut)
-        );
-      }
-
-      BOOKINGS.push({
-        room: roomInput.value,
-        checkIn: checkInInput.value,
-        checkOut: checkOutInput.value
-      });
-
-      BOOKED_MAP = buildBookedMap(BOOKINGS);
-      closeModal();
-      render();
-    });
+/* ===== SAVE / DELETE ===== */
+saveBtn.onclick=()=>{
+  fetch(API_URL,{
+    method:'POST',
+    body:JSON.stringify({
+      action:EDIT_BOOKING?'update':'create',
+      old:EDIT_BOOKING,
+      room:CURRENT_ROOM,
+      checkIn:checkInInput.value,
+      checkOut:checkOutInput.value,
+      source:CURRENT_SOURCE
+    })
+  }).then(load);
 };
 
-deleteBtn.onclick = () => {
-  fetch(API_URL, {
+deleteBtn.onclick=()=>{
+  fetch(API_URL,{
     method:'POST',
-    body: JSON.stringify({ action:'delete', booking: EDIT_BOOKING })
-  }).then(() => {
-    BOOKINGS = BOOKINGS.filter(b =>
-      !(b.room === EDIT_BOOKING.room &&
-        b.checkIn === EDIT_BOOKING.checkIn &&
-        b.checkOut === EDIT_BOOKING.checkOut)
-    );
-    BOOKED_MAP = buildBookedMap(BOOKINGS);
-    closeModal();
-    render();
-  });
+    body:JSON.stringify({action:'delete',booking:EDIT_BOOKING})
+  }).then(load);
 };
 </script>
 
