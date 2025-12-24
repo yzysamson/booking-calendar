@@ -1,38 +1,25 @@
 /* =====================================================
-   GLOBAL — LOCK SCREEN (APP-LIKE)
+   GLOBAL
 ===================================================== */
-*{
-  box-sizing:border-box;
-}
+*{ box-sizing:border-box }
 
 html, body{
   margin:0;
   padding:0;
   width:100%;
   height:100%;
-  overflow:hidden; /* 整个页面不能滚 */
-  font-family:system-ui, -apple-system, BlinkMacSystemFont;
+  overflow:hidden;
+  font-family:system-ui, -apple-system;
   background:#faf7f2;
-  color:#111;
 }
 
 /* =====================================================
-   VARIABLES
-===================================================== */
-:root{
-  --topbar-h: 72px;     /* month picker + legend */
-  --summary-h: 120px;  /* bottom summary */
-}
-
-/* =====================================================
-   TOPBAR (FREEZE)
+   TOPBAR
 ===================================================== */
 .topbar{
   position:fixed;
-  top:0;
-  left:0;
-  right:0;
-  height:var(--topbar-h);
+  top:0; left:0; right:0;
+  height:72px;
   padding:8px;
   display:flex;
   gap:10px;
@@ -42,110 +29,84 @@ html, body{
   z-index:100;
 }
 
-.topbar input{
-  padding:4px 6px;
-  font-size:14px;
-}
-
 /* =====================================================
-   LEGEND (X SCROLL ONLY)
-===================================================== */
-.legend{
-  display:flex;
-  gap:12px;                    /* 🔥 source 之间更大间距 */
-  font-size:12px;
-  white-space:nowrap;
-  overflow-x:auto;
-  -webkit-overflow-scrolling:touch;
-}
-
-.legend-item{
-  display:flex;
-  align-items:center;
-  gap:6px;
-  padding:6px 10px;            /* 🔥 更好点的点击区域 */
-  border-radius:8px;
-  cursor:pointer;
-}
-
-.legend-item.active{
-  background:#eee;
-}
-
-/* legend color dot */
-.legend-color{
-  width:10px;
-  height:10px;
-  border-radius:3px;
-  display:inline-block;
-}
-
-/* =====================================================
-   MAIN SCREEN (CALENDAR AREA)
-   NOTE:
-   +18px is REQUIRED to avoid topbar covering
-   2-row Y axis (header + first room)
-===================================================== */
-.screen{
-  position:fixed;
-  top:calc(var(--topbar-h) + 18px);
-  bottom:var(--summary-h);
-  left:0;
-  right:0;
-  display:flex;
-  background:#faf7f2;
-  overflow:hidden;
-}
-
-/* =====================================================
-   Y AXIS (FREEZE — NEVER SCROLL)
-===================================================== */
-#y-axis{
-  width:88px;
-  flex-shrink:0;
-  background:#fdfcf9;
-  border-right:1px solid #e5e5e5;
-}
-
-/* Y header (Date / Room) */
-.y-header{
-  height:34px;
-  background:#f3f1ec;
-  font-size:10px;
-  display:flex;
-  justify-content:space-between;
-  padding:4px;
-}
-
-/* Y room rows */
-.y-room{
-  height:34px;
-  padding:6px;
-  font-size:12px;
-  border-bottom:1px solid #eee;
-}
-
-/* =====================================================
-   X AXIS (ONLY THIS SCROLLS)
+   CALENDAR SCROLL AREA
 ===================================================== */
 #x-scroll{
-  flex:1;
+  position:fixed;
+  top:90px;            /* topbar + spacing */
+  bottom:120px;        /* summary */
+  left:0; right:0;
+
   overflow-x:auto;
   overflow-y:hidden;
   -webkit-overflow-scrolling:touch;
 }
 
-/* calendar content must exceed width */
-#app{
-  min-width:fit-content;
-}
-
 /* =====================================================
-   GRID (INSIDE #app)
+   GRID
 ===================================================== */
 .header,
 .row{
   display:grid;
+}
+
+/* =====================================================
+   ROOM (STICKY Y AXIS)
+===================================================== */
+.room{
+  position:sticky;
+  left:0;
+  z-index:5;
+
+  width:88px;
+  min-width:88px;
+  max-width:88px;
+
+  height:34px;
+  padding:6px;
+  font-size:12px;
+
+  background:#fdfcf9;
+  border-right:1px solid #e5e5e5;
+}
+
+/* header room above all */
+.header .room{
+  z-index:10;
+  background:#f3f1ec;
+  font-size:10px;
+}
+
+/* =====================================================
+   CORNER (DATE / ROOM)
+===================================================== */
+.corner{
+  position:relative;
+}
+
+.corner::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  background:linear-gradient(
+    45deg,
+    transparent 49.5%,
+    #ccc 50%,
+    transparent 50.5%
+  );
+}
+
+.corner-date{
+  position:absolute;
+  top:4px;
+  left:6px;
+}
+
+.corner-room{
+  position:absolute;
+  bottom:4px;
+  right:6px;
 }
 
 /* =====================================================
@@ -170,17 +131,17 @@ html, body{
 ===================================================== */
 .bar{
   height:34px;
-  color:#fff;
-  font-size:12px;
   display:flex;
   align-items:center;
   justify-content:center;
+  font-size:12px;
+  color:#fff;
   border-radius:4px;
   cursor:pointer;
 }
 
 /* =====================================================
-   SOURCE COLORS (LEGEND + BAR)
+   SOURCE COLORS
 ===================================================== */
 .src-airbnb{background:#ff385c}
 .src-booking{background:#003580}
@@ -191,27 +152,25 @@ html, body{
 .src-walkinsoo{background:#8b4513}
 
 /* =====================================================
-   SUMMARY (FREEZE BOTTOM)
+   SUMMARY
 ===================================================== */
 #summary{
   position:fixed;
-  bottom:0;
-  left:0;
-  right:0;
-  height:var(--summary-h);
+  bottom:0; left:0; right:0;
+  height:120px;
   background:#faf7f2;
   border-top:1px solid #e5e5e5;
   overflow-y:auto;
   padding:10px;
 }
 
-.summary-title{
-  font-weight:600;
-  margin:6px 0 4px;
-}
-
-.summary-row{
-  display:flex;
-  justify-content:space-between;
-  padding:4px 0;
+/* =====================================================
+   MODAL
+===================================================== */
+.modal{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.35);
+  display:none;
+  z-index:9999;
 }
