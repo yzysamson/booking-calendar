@@ -14,7 +14,10 @@ body{margin:0;font-family:system-ui;background:#fff;color:#111}
 .topbar{
   padding:6px 8px;
   border-bottom:1px solid #e5e5e5;
-  display:flex;gap:10px;align-items:center;overflow-x:auto
+  display:flex;
+  gap:10px;
+  align-items:center;
+  overflow-x:auto
 }
 .topbar input{padding:4px 6px;font-size:14px}
 
@@ -27,45 +30,84 @@ body{margin:0;font-family:system-ui;background:#fff;color:#111}
 .legend-item.active{background:#eee}
 .legend-color{width:10px;height:10px;border-radius:3px}
 
+/* ===== SCROLL (⭐ sticky 修复在这里) ===== */
+.scroll-x{
+  overflow-x:auto;
+  overflow-y:visible;   /* ⭐ 关键 */
+  -webkit-overflow-scrolling:touch;
+}
+.calendar{
+  min-width:max-content;
+  overflow:visible;     /* ⭐ iOS 兜底 */
+}
+
 /* ===== GRID ===== */
-.scroll-x{overflow-x:auto}
 .header,.row{display:grid}
 
 /* ===== Y AXIS ===== */
 .room{
-  width:88px;padding:6px;font-size:12px;
-  background:#fafafa;border-right:1px solid #e5e5e5;
-  position:sticky;left:0;z-index:3
+  width:88px;
+  padding:6px;
+  font-size:12px;
+  background:#fafafa;
+  border-right:1px solid #e5e5e5;
+  position:sticky;
+  left:0;
+  z-index:3;
+  white-space:nowrap
 }
-.header .room{background:#f5f5f5;z-index:4}
+.header .room{
+  background:#f5f5f5;
+  z-index:4;
+  position:relative;
+  padding:0;
+}
 
 /* ===== CORNER ===== */
 .corner{
-  position:relative;background:#f5f5f5;
-  color:#777;font-size:10px
+  position:relative;
+  width:88px;
+  height:34px;
+  background:#f5f5f5;
+  color:#777;
+  font-size:10px;
 }
 .corner::before{
-  content:"";position:absolute;inset:0;
-  background:linear-gradient(45deg,transparent 49.5%,#d0d0d0 50%,transparent 50.5%)
+  content:"";
+  position:absolute;
+  inset:0;
+  background:linear-gradient(
+    45deg,
+    transparent 49.5%,
+    #d0d0d0 50%,
+    transparent 50.5%
+  );
 }
 .corner-date{position:absolute;top:4px;left:6px}
 .corner-room{position:absolute;bottom:4px;right:6px}
 
 /* ===== CELL ===== */
 .cell{
-  position:relative;height:34px;border:1px solid #eee;
-  display:flex;align-items:center;justify-content:center;
-  font-size:12px;cursor:pointer
+  position:relative;
+  height:34px;
+  border:1px solid #eee;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:12px;
+  cursor:pointer
 }
 
-/* selecting */
+/* selecting animation */
 @keyframes iosPulse{
   0%{opacity:.25;transform:scale(1)}
   50%{opacity:.4;transform:scale(1.03)}
   100%{opacity:.25;transform:scale(1)}
 }
 .cell.selecting::after{
-  content:"";position:absolute;inset:2px;
+  content:"";
+  position:absolute;
+  inset:2px;
   border-radius:6px;
   background:rgba(255,56,92,.35);
   animation:iosPulse 1.2s ease-in-out infinite;
@@ -73,9 +115,14 @@ body{margin:0;font-family:system-ui;background:#fff;color:#111}
 
 /* ===== BAR ===== */
 .bar{
-  height:34px;color:#fff;font-size:11px;
-  display:flex;align-items:center;justify-content:center;
-  border-radius:4px;cursor:pointer
+  height:34px;
+  color:#fff;
+  font-size:11px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border-radius:4px;
+  cursor:pointer
 }
 
 /* ===== COLORS ===== */
@@ -89,22 +136,25 @@ body{margin:0;font-family:system-ui;background:#fff;color:#111}
 
 /* ===== MODAL ===== */
 .modal{
-  position:fixed;inset:0;
+  position:fixed;
+  inset:0;
   background:rgba(0,0,0,.35);
-  display:none;z-index:1000
+  display:none;
+  z-index:1000
 }
 .modal-box{
   background:#fff;
   border-radius:14px 14px 0 0;
   padding:10px 12px;
-  position:absolute;bottom:0;left:0;right:0
+  position:absolute;
+  bottom:0;left:0;right:0
 }
 .modal-box label{
-  font-size:11px;color:#555;
-  margin-top:2px;display:block
+  font-size:11px;
+  color:#555;
+  display:block;
+  margin-top:2px
 }
-
-/* 🔑 所有输入统一高度 */
 .modal-box input,
 .modal-box select{
   width:100%;
@@ -116,8 +166,6 @@ body{margin:0;font-family:system-ui;background:#fff;color:#111}
   border:1px solid #ddd;
   appearance:none;
 }
-
-/* button */
 .modal-box button{
   height:38px;
   padding:8px;
@@ -128,6 +176,7 @@ body{margin:0;font-family:system-ui;background:#fff;color:#111}
 }
 .actions{display:flex;gap:8px}
 .actions button{flex:1}
+#saveBtn:disabled{opacity:.4}
 </style>
 </head>
 
@@ -166,7 +215,7 @@ body{margin:0;font-family:system-ui;background:#fff;color:#111}
     <input type="text" id="remarkInput">
 
     <div class="actions">
-      <button id="saveBtn"></button>
+      <button id="saveBtn" disabled>Save</button>
       <button id="deleteBtn" style="display:none">Delete</button>
       <button onclick="closeModal()">Cancel</button>
     </div>
@@ -174,6 +223,7 @@ body{margin:0;font-family:system-ui;background:#fff;color:#111}
 </div>
 
 <script>
+/* ===== Supabase ===== */
 const sb = supabase.createClient(
   'https://pwscsukxfnbzjciuhtwl.supabase.co',
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3c2NzdWt4Zm5iempjaXVodHdsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY1MzU1MDQsImV4cCI6MjA4MjExMTUwNH0.YQEXs1S3wprPMOarCL_DLXDtsSgY6I7TFM4bp_gLkW8'
@@ -186,6 +236,7 @@ let FILTER=new Set();
 let selectState=null;
 let editingBooking=null;
 
+/* ===== DOM ===== */
 const app=document.getElementById('app');
 const modal=document.getElementById('modal');
 const saveBtn=document.getElementById('saveBtn');
@@ -199,16 +250,19 @@ const sourceInput=document.getElementById('sourceInput');
 const priceInput=document.getElementById('priceInput');
 const remarkInput=document.getElementById('remarkInput');
 
+/* ===== INIT ===== */
 monthPicker.value=new Date().toISOString().slice(0,7);
 monthPicker.onchange=loadAll;
 loadAll();
 
+/* ===== LOAD ===== */
 async function loadAll(){
   ROOMS=(await sb.from('rooms').select('*').order('id')).data||[];
   BOOKINGS=(await sb.from('booking_view').select('*')).data||[];
   buildDays();buildLegend();buildSelects();render();
 }
 
+/* ===== Legend / Selects / Days ===== */
 function buildLegend(){
   legend.innerHTML='';
   const all=document.createElement('div');
@@ -225,20 +279,19 @@ function buildLegend(){
     legend.appendChild(el);
   });
 }
-
 function buildSelects(){
   roomInput.innerHTML='';
   ROOMS.forEach(r=>roomInput.innerHTML+=`<option value="${r.id}">${r.name}</option>`);
   sourceInput.innerHTML='';
   SOURCES.forEach(s=>sourceInput.innerHTML+=`<option>${s}</option>`);
 }
-
 function buildDays(){
   const [y,m]=monthPicker.value.split('-').map(Number);
   DAYS=[...Array(new Date(y,m,0).getDate())]
     .map((_,i)=>`${y}-${String(m).padStart(2,'0')}-${String(i+1).padStart(2,'0')}`);
 }
 
+/* ===== Render ===== */
 function render(){
   let html='';
   const cols=`88px repeat(${DAYS.length},56px)`;
@@ -278,6 +331,7 @@ function render(){
   app.innerHTML=html;
 }
 
+/* ===== Click logic ===== */
 function onCellClick(el){
   const room=el.dataset.room;
   const date=el.dataset.date;
@@ -294,6 +348,7 @@ function onCellClick(el){
   selectState=null;
 }
 
+/* ===== Modal ===== */
 function openNew(room,ci,co){
   modalTitle.textContent='New Booking';
   saveBtn.textContent='Save';
@@ -301,13 +356,19 @@ function openNew(room,ci,co){
 
   roomInput.value=ROOMS.find(r=>r.name===room).id;
   checkinInput.value=ci;
-  checkoutInput.value=co;
-  checkoutInput.min=ci;
+
+  const nextDay=new Date(ci);
+  nextDay.setDate(nextDay.getDate()+1);
+  const minCheckout=nextDay.toISOString().slice(0,10);
+
+  checkoutInput.min=minCheckout;
+  checkoutInput.value=minCheckout;
 
   roomInput.disabled=true;
   checkinInput.disabled=true;
   sourceInput.disabled=false;
 
+  saveBtn.disabled=false;
   deleteBtn.style.display='none';
   modal.style.display='block';
 }
@@ -330,13 +391,21 @@ function openEdit(id){
   checkinInput.disabled=false;
   sourceInput.disabled=false;
 
+  saveBtn.disabled=false;
   deleteBtn.style.display='block';
   modal.style.display='block';
 }
 
 function closeModal(){modal.style.display='none'}
 
+/* ===== Save / Delete ===== */
+checkoutInput.onchange=()=>{
+  saveBtn.disabled = checkoutInput.value <= checkinInput.value;
+};
+
 saveBtn.onclick=async()=>{
+  if(saveBtn.disabled) return;
+
   const payload={
     room_id:+roomInput.value,
     check_in:checkinInput.value,
@@ -345,9 +414,11 @@ saveBtn.onclick=async()=>{
     price:priceInput.value||0,
     remark:remarkInput.value||null
   };
+
   editingBooking
     ? await sb.from('bookings').update(payload).eq('id',editingBooking.id)
     : await sb.from('bookings').insert(payload);
+
   closeModal();loadAll();
 };
 
