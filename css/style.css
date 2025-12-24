@@ -1,5 +1,5 @@
 /* =====================================================
-   GLOBAL — LOCK THE SCREEN
+   GLOBAL — LOCK VIEWPORT
 ===================================================== */
 *{
   box-sizing:border-box;
@@ -10,21 +10,26 @@ html, body{
   padding:0;
   width:100%;
   height:100%;
-  overflow:hidden;                 /* 🔒 整个页面不能滑 */
+  overflow:hidden;                 /* 页面本身不滚 */
   font-family:system-ui, -apple-system, BlinkMacSystemFont;
   background:#faf7f2;
   color:#111;
 }
 
 /* =====================================================
-   TOP BAR — FREEZE
+   TOPBAR (FREEZE)
 ===================================================== */
+:root{
+  --topbar-h: 56px;
+  --summary-h: 120px;
+}
+
 .topbar{
-  position:absolute;
+  position:fixed;
   top:0;
   left:0;
   right:0;
-  height:52px;
+  height:var(--topbar-h);
   padding:8px;
   display:flex;
   gap:10px;
@@ -40,7 +45,7 @@ html, body{
 }
 
 /* =====================================================
-   LEGEND — X SCROLL ONLY
+   LEGEND (X SCROLL ONLY)
 ===================================================== */
 .legend{
   display:flex;
@@ -51,55 +56,63 @@ html, body{
   -webkit-overflow-scrolling:touch;
 }
 
+/* legend color dot — 修复丢失问题 */
+.legend-color{
+  width:10px;
+  height:10px;
+  border-radius:3px;
+  display:inline-block;
+}
+
 /* =====================================================
-   MAIN SCREEN AREA (BETWEEN TOP & SUMMARY)
+   CALENDAR FRAME (AUTO FIT ANY MOBILE)
 ===================================================== */
 #calendar-screen{
-  position:absolute;
-  top:52px;                        /* under topbar */
-  bottom:120px;                    /* above summary */
+  position:fixed;
+  top:var(--topbar-h);
+  bottom:var(--summary-h);
   left:0;
   right:0;
-  overflow:hidden;                 /* 🔒 no page scroll */
   background:#faf7f2;
+  overflow:hidden;                 /* 关键：这里不能滚 */
 }
 
 /* =====================================================
-   CALENDAR X SCROLL WINDOW (ONLY SCROLLABLE ZONE)
-===================================================== */
-#calendar-scroll{
-  width:100%;
-  height:100%;
-  overflow-x:auto;                 /* ✅ ONLY THIS SCROLLS */
-  overflow-y:hidden;
-  -webkit-overflow-scrolling:touch;
-}
-
-/* calendar content must expand horizontally */
-#app{
-  min-width:fit-content;
-}
-
-/* =====================================================
-   GRID
-===================================================== */
-.header,
-.row{
-  display:grid;
-}
-
-/* =====================================================
-   FREEZE: DATE HEADER
+   HEADER LAYER (FREEZE Y + DATE)
 ===================================================== */
 .header{
   position:sticky;
   top:0;
   z-index:20;
   background:#faf7f2;
+  display:grid;
 }
 
 /* =====================================================
-   FREEZE: Y AXIS (ROOM COLUMN)
+   X SCROLL LAYER (ONLY THIS MOVES)
+===================================================== */
+#calendar-scroll{
+  width:100%;
+  height:100%;
+  overflow-x:auto;                 /* 唯一的横滑来源 */
+  overflow-y:hidden;
+  -webkit-overflow-scrolling:touch;
+}
+
+/* calendar 内容需要撑开 */
+#app{
+  min-width:fit-content;
+}
+
+/* =====================================================
+   GRID ROWS
+===================================================== */
+.row{
+  display:grid;
+}
+
+/* =====================================================
+   Y AXIS — ROOM (FREEZE)
 ===================================================== */
 .room{
   width:88px;
@@ -113,7 +126,7 @@ html, body{
   z-index:30;
 }
 
-/* top-left corner */
+/* 左上角 Date / Room */
 .header .room{
   background:#f3f1ec;
   z-index:40;
@@ -150,7 +163,7 @@ html, body{
 }
 
 /* =====================================================
-   SOURCE COLORS
+   SOURCE COLORS (UNCHANGED)
 ===================================================== */
 .src-airbnb{background:#ff385c}
 .src-booking{background:#003580}
@@ -161,14 +174,14 @@ html, body{
 .src-walkinsoo{background:#8b4513}
 
 /* =====================================================
-   SUMMARY — FREEZE BOTTOM
+   SUMMARY (FREEZE BOTTOM)
 ===================================================== */
 #summary{
-  position:absolute;
+  position:fixed;
   bottom:0;
   left:0;
   right:0;
-  height:120px;
+  height:var(--summary-h);
   padding:10px;
   background:#faf7f2;
   border-top:1px solid #e5e5e5;
