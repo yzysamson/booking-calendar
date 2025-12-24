@@ -156,12 +156,10 @@ html, body{
 #summary{
   position: sticky;
   bottom: 0;
-
-  padding:10px;
   background:#faf7f2;
-  border-top:1px solid #e5e5e5;
-  z-index: 20;
+  z-index: 10;
 }
+
 
 /* =====================================================
    MODAL
@@ -406,4 +404,34 @@ body{
   height:100%;
   background:#faf7f2;      /* 与页面背景一致 */
   pointer-events:none;
+}
+
+/* =========================================
+   iOS SAFARI FIX
+   Prevent sticky room showing on far right
+========================================= */
+
+/* 横向滚动容器 */
+#x-scroll{
+  position: relative;
+  overflow-x: auto;
+  overflow-y: auto;
+}
+
+/* 用遮罩盖住最右侧多余 room */
+#x-scroll::after{
+  content:"";
+  position:absolute;
+  top:0;
+  right:0;
+  width:88px;              /* 与 .room 宽度一致 */
+  height:100%;
+  background:#faf7f2;      /* 页面背景色 */
+  pointer-events:none;
+  z-index:5;
+}
+
+/* 只允许日期区产生横向滚动 */
+#app{
+  min-width: calc(88px + (56px * 31)); /* 31 = 最大天数 */
 }

@@ -17,6 +17,7 @@ function render(){
   /* Room + Days */
   const cols = `88px repeat(${DAYS.length},56px)`;
 
+
   /* ===== HEADER ===== */
   html += `
     <div class="header" style="grid-template-columns:${cols}">
