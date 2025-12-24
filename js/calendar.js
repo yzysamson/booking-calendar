@@ -13,19 +13,15 @@ function buildDays(){
 
 function render(){
   let html='';
-  const cols=`88px repeat(${DAYS.length},56px)`;
+  const cols = `repeat(${DAYS.length},56px)`;
 
-  html+=`<div class="header" style="grid-template-columns:${cols}">
-    <div class="room corner">
-      <span class="corner-date">Date</span>
-      <span class="corner-room">Room</span>
-    </div>`;
+  html += `<div class="header" style="grid-template-columns:repeat(${DAYS.length},56px)">`;
+
   DAYS.forEach(d=>html+=`<div class="cell">${d.slice(8)}</div>`);
   html+=`</div>`;
 
   ROOMS.forEach(r=>{
-    html+=`<div class="row" style="grid-template-columns:${cols}">
-      <div class="room">${r.name}</div>`;
+     html += `<div class="row" style="grid-template-columns:repeat(${DAYS.length},56px)">`;
     let i=0;
     while(i<DAYS.length){
       const d=DAYS[i];
