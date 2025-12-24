@@ -80,6 +80,7 @@ function render(){
 
 
 function onCellClick(el){
+  console.log('onCellClick fired');
   const room=el.dataset.room;
   const date=el.dataset.date;
   document.querySelectorAll('.cell.selecting').forEach(c=>c.classList.remove('selecting'));
