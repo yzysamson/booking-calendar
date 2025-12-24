@@ -53,3 +53,73 @@ body{margin:0;font-family:system-ui;background:#fff;color:#111}
 .actions{display:flex;gap:8px}
 .actions button{flex:1}
 #saveBtn:disabled{opacity:.4}
+
+body{
+  background:#faf7f2; /* 浅米色 */
+}
+
+.topbar{
+  position:fixed;
+  top:0;
+  left:0;
+  right:0;
+  z-index:100;
+  background:#faf7f2;
+}
+
+#summary{
+  position:fixed;
+  bottom:0;
+  left:0;
+  right:0;
+  background:#faf7f2;
+  z-index:100;
+  max-height:30vh;
+  overflow-y:auto; /* 如果内容很多，只在 summary 内滚 */
+}
+
+#calendar-wrap{
+  position:relative;
+  margin-top:48px;    /* 给 topbar 留空间 */
+  margin-bottom:140px;/* 给 summary 留空间 */
+  overflow-x:auto;    /* 只允许横向滑 */
+  overflow-y:hidden;
+}
+
+#app{
+  min-width:fit-content;
+}
+
+.header{
+  position:sticky;
+  top:48px; /* 紧贴 topbar 下方 */
+  z-index:10;
+  background:#faf7f2;
+}
+
+#calendar-wrap{
+  -webkit-overflow-scrolling: touch; /* iOS momentum */
+  overscroll-behavior-x: contain;    /* 防止整页被拖走 */
+  touch-action: pan-x;               /* 只允许横向滑 */
+}
+
+#summary{
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+}
+
+.legend{
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+  touch-action: pan-x;
+}
+
+.cell,
+.bar,
+.legend-item{
+  touch-action: manipulation;
+}
+
+#calendar-wrap::-webkit-scrollbar{
+  display:none; /* iOS 原生没有 scrollbar */
+}
