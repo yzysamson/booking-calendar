@@ -83,6 +83,8 @@ body{
   -webkit-overflow-scrolling:touch;
   overscroll-behavior-x:contain;
   touch-action:pan-x;
+   margin-left:-88px;   /* 吃掉重复的 Room 宽度 */
+  padding-left:88px;   /* 保证内容仍然正确对齐 */
 }
 
 /* Calendar content must exceed width */
