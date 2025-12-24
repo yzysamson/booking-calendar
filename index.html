@@ -1,34 +1,42 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Booking Calendar</title>
 
 <style>
-/* =========================
-   STOP-BLEED STABLE CSS
-   ========================= */
+:root {
+  --row-h: 32px;
+  --cell-w: 56px;
+  --room-w: 90px;
+
+  --free: #FFF8EB;
+  --booked: #F24E7C;
+  --border: #ddd;
+}
+
+* { box-sizing: border-box; }
 
 body {
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont,
     "SF Pro Text","Helvetica Neue",Arial,sans-serif;
-  background: #ffffff;
+  background: #fff;
 }
 
 /* Top bar */
 .topbar {
   padding: 8px 10px;
-  border-bottom: 1px solid #ddd;
+  border-bottom: 1px solid var(--border);
 }
 
-/* ONE wrapper only */
+/* Calendar wrapper */
 .wrapper {
   overflow-x: auto;
 }
 
-/* Grid core */
+/* Grid */
 .header,
 .row {
   display: grid;
@@ -38,22 +46,21 @@ body {
 
 /* Room column */
 .room-col {
-  width: 90px;
-  min-width: 90px;
-  height: 32px;
-  line-height: 32px;
-  border-right: 1px solid #ddd;
-  background: #fafafa;
+  width: var(--room-w);
+  min-width: var(--room-w);
+  height: var(--row-h);
+  line-height: var(--row-h);
   text-align: center;
+  background: #fafafa;
+  border-right: 1px solid var(--border);
   font-size: 13px;
 }
 
 /* Date cell */
 .cell {
-  width: 56px;
-  height: 32px;
-  border: 1px solid #ddd;
-  box-sizing: border-box;
+  width: var(--cell-w);
+  height: var(--row-h);
+  border: 1px solid var(--border);
   text-align: center;
   font-size: 12px;
   user-select: none;
@@ -61,18 +68,41 @@ body {
 }
 
 /* States */
-.free {
-  background: #FFF8EB;
-}
-
-.booked {
-  background: #F24E7C;
-  color: #fff;
-}
+.free { background: var(--free); }
+.booked { background: var(--booked); color: #fff; }
 
 .selected {
   outline: 2px solid #34C759;
   outline-offset: -2px;
+}
+
+/* Desktop: sticky room */
+@media (min-width: 769px) {
+  .room-col {
+    position: sticky;
+    left: 0;
+    z-index: 5;
+  }
+}
+
+/* Mobile UX fixes */
+@media (max-width: 768px) {
+  .room-col {
+    position: relative;
+    left: auto;
+    z-index: 1;
+  }
+  .cell:hover,
+  .cell:active {
+    background: inherit;
+  }
+}
+
+/* Prevent room highlight */
+.room-col:hover,
+.room-col:active,
+.row:hover .room-col {
+  background: #fafafa !important;
 }
 
 /* Modal */
@@ -80,7 +110,8 @@ body {
   display: none;
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,.3);
+  background: rgba(0,0,0,.35);
+  z-index: 9999;
 }
 
 .modal-box {
@@ -89,7 +120,7 @@ body {
   max-width: 320px;
   margin: 20% auto;
   padding: 14px;
-  border-radius: 10px;
+  border-radius: 12px;
 }
 
 .modal-box h3 {
@@ -100,45 +131,8 @@ body {
 .modal-box select,
 .modal-box button {
   width: 100%;
+  height: 34px;
   margin-bottom: 8px;
-  height: 32px;
-}
-
-/* ===== STEP 1: Sticky Room Column ===== */
-.room-col {
-  position: sticky;
-  left: 0;
-  z-index: 5;
-}
-
-/* ===== FIX: prevent room-col highlight ===== */
-
-/* ===== Mobile UX Fix ===== */
-@media (max-width: 768px) {
-
-  /* 手机上不要 sticky room */
-  .room-col {
-    position: relative !important;
-    left: auto !important;
-    z-index: 1 !important;
-  }
-
-  /* 手机上不需要 hover / active 效果 */
-  .cell:hover,
-  .cell:active {
-    background: inherit;
-  }
-}
-
-/* Room 列永远不参与选中 / hover 高亮 */
-.room-col:hover,
-.room-col:active,
-.row:hover .room-col {
-  background: #fafafa !important;
-}
-
-.modal {
-  z-index: 9999;
 }
 </style>
 </head>
@@ -154,7 +148,7 @@ body {
 <!-- Modal -->
 <div class="modal" id="modal">
   <div class="modal-box">
-    <h3 id="modalTitle">New Booking</h3>
+    <h3 id="modalTitle">Booking</h3>
 
     <label>Room</label>
     <select id="roomInput"></select>
@@ -172,12 +166,20 @@ body {
 </div>
 
 <script>
-const API_URL = 'https://script.google.com/macros/s/AKfycbxdl0gBcDgUcH8wtw1DUEb9RLHh3RHgXs9u3Gp6r-7V-pnrtFZXht7V9GydnQO8I0ja/exec';
+  const SOURCES = [
+  "Booking",
+  "Trip",
+  "Agoda",
+  "Airbnb",
+  "SLH",
+  "Walk-in (Wayne)",
+  "Walk-in (Soo)"
+];
 
-const app = document.getElementById('app');
-const monthPicker = document.getElementById('monthPicker');
+/* ================= CONFIG ================= */
+const API_URL = 'https://script.google.com/macros/s/AKfycbxd5Ri0S06IsjqQ6BSNx0uGxzLJyTZGf-0asPxszpE2vvUZOT6wDwTAlZRQPupzTVTLZg/exec';
 
-/* ===== STATE ===== */
+/* ================= STATE ================= */
 let ROOMS = [];
 let BOOKINGS = [];
 let BOOKED_MAP = {};
@@ -187,17 +189,17 @@ let SELECT_ROOM = null;
 let SELECT_START = null;
 let EDIT_BOOKING = null;
 
-/* ===== INIT ===== */
+/* ================= INIT ================= */
+const app = document.getElementById('app');
+const monthPicker = document.getElementById('monthPicker');
+
 monthPicker.value = new Date().toISOString().slice(0,7);
 monthPicker.addEventListener('change', load);
 
 load();
 
-/* ===== LOAD DATA ===== */
+/* ================= LOAD ================= */
 function load() {
-  clearSelection();          // ✅ 防止残留选择
-  app.innerHTML = '';        // ✅ 确保只有一个 grid
-
   fetch(API_URL)
     .then(r => r.json())
     .then(data => {
@@ -205,11 +207,10 @@ function load() {
       BOOKINGS = data.bookings;
       BOOKED_MAP = buildBookedMap(BOOKINGS);
       DAYS = buildDays(monthPicker.value);
-      render();              // ✅ render 只在这里
+      render();
     });
 }
 
-/* ===== UTIL ===== */
 function buildDays(month) {
   const [y,m] = month.split('-').map(Number);
   const total = new Date(y, m, 0).getDate();
@@ -231,15 +232,14 @@ function buildBookedMap(bookings) {
   return map;
 }
 
-/* ===== RENDER (只一次) ===== */
+/* ================= RENDER ================= */
 function render() {
+  app.innerHTML = '';
+
   // Header
   const header = document.createElement('div');
   header.className = 'header';
-
-  const corner = document.createElement('div');
-  corner.className = 'room-col';
-  header.appendChild(corner);
+  header.appendChild(document.createElement('div')).className = 'room-col';
 
   DAYS.forEach(d => {
     const c = document.createElement('div');
@@ -247,7 +247,6 @@ function render() {
     c.textContent = d.slice(8);
     header.appendChild(c);
   });
-
   app.appendChild(header);
 
   // Rows
@@ -262,9 +261,7 @@ function render() {
 
     DAYS.forEach(day => {
       const c = document.createElement('div');
-      c.className = 'cell ' +
-        (BOOKED_MAP[`${room}|${day}`] ? 'booked' : 'free');
-
+      c.className = 'cell ' + (BOOKED_MAP[`${room}|${day}`] ? 'booked' : 'free');
       c.addEventListener('click', () => onCellClick(room, day));
       row.appendChild(c);
     });
@@ -273,7 +270,7 @@ function render() {
   });
 }
 
-/* ===== CLICK ===== */
+/* ================= INTERACTION ================= */
 function onCellClick(room, day) {
   const booking = BOOKED_MAP[`${room}|${day}`];
 
@@ -299,16 +296,11 @@ function onCellClick(room, day) {
   }
 }
 
-/* ===== SELECTION ===== */
 function highlight(room, start, end) {
-  document.querySelectorAll('.cell').forEach(c =>
-    c.classList.remove('selected')
-  );
-
+  document.querySelectorAll('.cell').forEach(c => c.classList.remove('selected'));
   document.querySelectorAll('.row').forEach(r => {
     if (r.firstChild.textContent !== room) return;
-    const cells = r.querySelectorAll('.cell');
-    cells.forEach((c,i)=>{
+    r.querySelectorAll('.cell').forEach((c,i) => {
       const d = DAYS[i];
       if (d >= start && d <= end) c.classList.add('selected');
     });
@@ -318,12 +310,10 @@ function highlight(room, start, end) {
 function clearSelection() {
   SELECT_ROOM = null;
   SELECT_START = null;
-  document.querySelectorAll('.cell').forEach(c =>
-    c.classList.remove('selected')
-  );
+  document.querySelectorAll('.cell').forEach(c => c.classList.remove('selected'));
 }
 
-/* ===== MODAL ===== */
+/* ================= MODAL ================= */
 const modal = document.getElementById('modal');
 const roomInput = document.getElementById('roomInput');
 const checkInInput = document.getElementById('checkInInput');
@@ -368,7 +358,7 @@ function closeModal() {
   EDIT_BOOKING = null;
 }
 
-/* ===== SAVE / DELETE ===== */
+/* ================= SAVE / DELETE (NO RELOAD) ================= */
 saveBtn.onclick = () => {
   const payload = EDIT_BOOKING ? {
     action: 'update',
@@ -383,22 +373,43 @@ saveBtn.onclick = () => {
     checkOut: checkOutInput.value
   };
 
-  fetch(API_URL, {
-    method:'POST',
-    body: JSON.stringify(payload)
-  }).then(load);
+  fetch(API_URL, { method:'POST', body: JSON.stringify(payload) })
+    .then(() => {
+      if (EDIT_BOOKING) {
+        BOOKINGS = BOOKINGS.filter(b =>
+          !(b.room === EDIT_BOOKING.room &&
+            b.checkIn === EDIT_BOOKING.checkIn &&
+            b.checkOut === EDIT_BOOKING.checkOut)
+        );
+      }
+
+      BOOKINGS.push({
+        room: roomInput.value,
+        checkIn: checkInInput.value,
+        checkOut: checkOutInput.value
+      });
+
+      BOOKED_MAP = buildBookedMap(BOOKINGS);
+      closeModal();
+      render();
+    });
 };
 
 deleteBtn.onclick = () => {
   fetch(API_URL, {
     method:'POST',
-    body: JSON.stringify({
-      action:'delete',
-      booking: EDIT_BOOKING
-    })
-  }).then(load);
+    body: JSON.stringify({ action:'delete', booking: EDIT_BOOKING })
+  }).then(() => {
+    BOOKINGS = BOOKINGS.filter(b =>
+      !(b.room === EDIT_BOOKING.room &&
+        b.checkIn === EDIT_BOOKING.checkIn &&
+        b.checkOut === EDIT_BOOKING.checkOut)
+    );
+    BOOKED_MAP = buildBookedMap(BOOKINGS);
+    closeModal();
+    render();
+  });
 };
-
 </script>
 
 </body>
