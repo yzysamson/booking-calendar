@@ -59,7 +59,7 @@ body{
 
 /* ===== Y AXIS ===== */
 .room{
-  width:110px;
+  width:120px;
   padding:6px 8px;
   font-size:13px;
   background:#fafafa;
@@ -95,24 +95,21 @@ body{
 .corner-date{position:absolute;top:4px;left:6px}
 .corner-room{position:absolute;bottom:4px;right:6px}
 
-/* ===== CELL ===== */
+/* ===== CELL (LEFT / RIGHT HALF) ===== */
 .cell{
   width:56px;
   height:36px;
   border:1px solid #eee;
   display:flex;
-  flex-direction:column;
   cursor:pointer;
 }
+
 .half{
-  flex:1
+  flex:1;
 }
-.half.top{
-  border-bottom:1px solid #fff
-}
-.half.conflict{
-  outline:2px solid #d10000;
-  outline-offset:-2px;
+
+.half.left{
+  border-right:1px solid #fff;
 }
 
 /* ===== COLORS ===== */
@@ -168,6 +165,7 @@ async function loadAll(){
   render();
 }
 
+/* ===== LEGEND ===== */
 function buildLegend(){
   legend.innerHTML='';
   SOURCES.forEach(s=>{
@@ -179,6 +177,7 @@ function buildLegend(){
   });
 }
 
+/* ===== DAYS ===== */
 function buildDays(){
   const [y,m] = monthPicker.value.split('-').map(Number);
   DAYS = Array.from({length:new Date(y,m,0).getDate()},(_,i)=>
@@ -186,35 +185,42 @@ function buildDays(){
   );
 }
 
-/* ===== HALF LOGIC ===== */
+/* ===== HALF LOGIC (LEFT / RIGHT) ===== */
 function getHalves(room,date){
-  let top=null,bottom=null;
+  let left=null,right=null;
+
   BOOKINGS.forEach(b=>{
     if(b.room!==room) return;
-    if(date>b.check_in && date<b.check_out){
-      top=b; bottom=b;
+
+    // middle full day
+    if(date > b.check_in && date < b.check_out){
+      left=b; right=b;
     }
-    if(date===b.check_in) bottom=b;
-    if(date===b.check_out) top=b;
+
+    // check-in day → right half
+    if(date === b.check_in){
+      right=b;
+    }
+
+    // check-out day → left half
+    if(date === b.check_out){
+      left=b;
+    }
   });
-  return {top,bottom};
+
+  return {left,right};
 }
 
-function hasConflict(room,date,half){
-  let count=0;
-  BOOKINGS.forEach(b=>{
-    if(b.room!==room) return;
-    if(date>b.check_in && date<b.check_out) count++;
-    if(date===b.check_in && half==='bottom') count++;
-    if(date===b.check_out && half==='top') count++;
-  });
-  return count>1;
+/* ===== CLICK ===== */
+function onHalfClick(room,date,half){
+  console.log('CLICK:',room,date,half);
+  alert(`${room}\n${date}\n${half === 'left' ? 'Checkout half' : 'Check-in half'}`);
 }
 
 /* ===== RENDER ===== */
 function render(){
   let html='';
-  const cols = `110px repeat(${DAYS.length},56px)`;
+  const cols = `120px repeat(${DAYS.length},56px)`;
 
   html+=`
   <div class="header" style="grid-template-columns:${cols}">
@@ -229,14 +235,18 @@ function render(){
     html+=`<div class="row" style="grid-template-columns:${cols}">
       <div class="room">${r.name}</div>`;
     DAYS.forEach(d=>{
-      const {top,bottom} = getHalves(r.name,d);
-      html+=`<div class="cell" onclick="console.log('${r.name}', '${d}')">`;
-      html+= top
-        ? `<div class="half top src-${norm(top.source)} ${hasConflict(r.name,d,'top')?'conflict':''}"></div>`
-        : `<div class="half top"></div>`;
-      html+= bottom
-        ? `<div class="half src-${norm(bottom.source)} ${hasConflict(r.name,d,'bottom')?'conflict':''}"></div>`
-        : `<div class="half"></div>`;
+      const {left,right}=getHalves(r.name,d);
+      html+=`<div class="cell">`;
+      html+= left
+        ? `<div class="half left src-${norm(left.source)}"
+            onclick="onHalfClick('${r.name}','${d}','left')"></div>`
+        : `<div class="half left"
+            onclick="onHalfClick('${r.name}','${d}','left')"></div>`;
+      html+= right
+        ? `<div class="half src-${norm(right.source)}"
+            onclick="onHalfClick('${r.name}','${d}','right')"></div>`
+        : `<div class="half"
+            onclick="onHalfClick('${r.name}','${d}','right')"></div>`;
       html+=`</div>`;
     });
     html+=`</div>`;
