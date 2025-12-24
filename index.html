@@ -286,6 +286,10 @@ function openNew(room,ci){
   roomInput.value=ROOMS.find(r=>r.name===room).id;
   checkinInput.value=ci;
 
+  checkinInput.value = ci;
+  checkoutInput.value = '';
+  checkoutInput.min = ci;
+
   roomInput.disabled=true;
   checkinInput.disabled=true;
   sourceInput.disabled=false;
