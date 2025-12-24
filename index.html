@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Booking Calendar</title>
 
-<!-- Supabase SDK v2（全局会注入 window.supabase） -->
 <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 
 <style>
@@ -13,7 +12,6 @@
 body {
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", Arial;
-  background: #fff;
 }
 .topbar {
   padding: 10px;
@@ -38,18 +36,22 @@ body {
 .cell {
   height: 32px;
   border: 1px solid #eee;
-  font-size: 12px;
-  text-align: center;
-  line-height: 32px;
 }
-.free { background: #FFF8EB; cursor: pointer; }
-.booked { color: #fff; cursor: pointer; }
+.free { background: #FFF8EB; }
+.booked { color: #fff; }
+
+.preview { opacity: 0.6; }
+.blocked { background: #999 !important; }
+
 .src-airbnb { background:#ff385c; }
 .src-booking { background:#003580; }
 .src-agoda { background:#e60023; }
 .src-trip { background:#ff6f00; }
 .src-slh { background:#6a5acd; }
+.src-walkinwayne { background:#2e8b57; }
+.src-walkinsoo { background:#8b4513; }
 
+/* Modal */
 .modal {
   position: fixed; inset: 0;
   background: rgba(0,0,0,.35);
@@ -63,7 +65,6 @@ body {
   position:absolute;
   bottom:0; left:0; right:0;
 }
-.modal-box h3 { margin: 0 0 8px; text-align:center; }
 .modal-box input, .modal-box select, .modal-box button {
   width:100%; padding:8px; margin:6px 0;
 }
@@ -80,10 +81,9 @@ body {
 
 <div class="wrapper" id="app"></div>
 
+<!-- Modal -->
 <div class="modal" id="modal">
   <div class="modal-box">
-    <h3>Booking</h3>
-
     <input id="roomInput" readonly>
     <input type="date" id="checkInInput" readonly>
     <input type="date" id="checkOutInput">
@@ -94,6 +94,8 @@ body {
       <option>Agoda</option>
       <option>Trip</option>
       <option>SLH</option>
+      <option>Walk-in (Wayne)</option>
+      <option>Walk-in (Soo)</option>
     </select>
 
     <div class="actions">
@@ -109,74 +111,105 @@ body {
 const SUPABASE_URL = 'https://pwscsukxfnbzjciuhtwl.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3c2NzdWt4Zm5iempjaXVodHdsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY1MzU1MDQsImV4cCI6MjA4MjExMTUwNH0.YQEXs1S3wprPMOarCL_DLXDtsSgY6I7TFM4bp_gLkW8';
 
-/* ================= INIT CLIENT（注意变量名 sb） ================= */
-const sb = supabase.createClient(
-  SUPABASE_URL,
-  SUPABASE_ANON_KEY
-);
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 /* ================= STATE ================= */
-let ROOMS = [];
-let BOOKINGS = [];
-let DAYS = [];
-let EDITING = null;
+let ROOMS=[], BOOKINGS=[], DAYS=[];
+let EDITING=null;
+let DRAGGING=false, DRAG_ROOM=null, DRAG_START=null, LAST_DAY=null;
 
 /* ================= DOM ================= */
-const app = document.getElementById('app');
-const monthPicker = document.getElementById('monthPicker');
-const statusEl = document.getElementById('status');
-
-const modal = document.getElementById('modal');
-const roomInput = document.getElementById('roomInput');
-const checkInInput = document.getElementById('checkInInput');
-const checkOutInput = document.getElementById('checkOutInput');
-const sourceInput = document.getElementById('sourceInput');
-const saveBtn = document.getElementById('saveBtn');
-const deleteBtn = document.getElementById('deleteBtn');
+const app=document.getElementById('app');
+const monthPicker=document.getElementById('monthPicker');
+const modal=document.getElementById('modal');
+const roomInput=document.getElementById('roomInput');
+const checkInInput=document.getElementById('checkInInput');
+const checkOutInput=document.getElementById('checkOutInput');
+const sourceInput=document.getElementById('sourceInput');
+const saveBtn=document.getElementById('saveBtn');
+const deleteBtn=document.getElementById('deleteBtn');
+const statusEl=document.getElementById('status');
 
 /* ================= BOOT ================= */
-monthPicker.value = new Date().toISOString().slice(0,7);
-monthPicker.onchange = loadAll;
+monthPicker.value=new Date().toISOString().slice(0,7);
+monthPicker.onchange=loadAll;
 loadAll();
 setupRealtime();
 
 /* ================= LOAD ================= */
-async function loadAll() {
-  statusEl.textContent = 'Loading...';
-  await loadRooms();
-  await loadBookings();
+async function loadAll(){
+  statusEl.textContent='Loading...';
+  ROOMS=(await sb.from('rooms').select('*').order('id')).data||[];
+  BOOKINGS=(await sb.from('booking_view').select('*')).data||[];
   buildDays();
   render();
-  statusEl.textContent = 'OK';
+  statusEl.textContent='OK';
 }
 
-async function loadRooms() {
-  const { data, error } = await sb.from('rooms').select('*').order('id');
-  if (error) return console.error(error);
-  ROOMS = data || [];
+function buildDays(){
+  const [y,m]=monthPicker.value.split('-').map(Number);
+  DAYS=[...Array(new Date(y,m,0).getDate())]
+    .map((_,i)=>`${y}-${String(m).padStart(2,'0')}-${String(i+1).padStart(2,'0')}`);
 }
 
-async function loadBookings() {
-  const { data, error } = await sb.from('booking_view').select('*');
-  if (error) return console.error(error);
-  BOOKINGS = data || [];
+/* ================= HELPERS ================= */
+function isBooked(room, day){
+  return BOOKINGS.some(b=>b.room===room && day>=b.check_in && day<b.check_out);
 }
 
-function buildDays() {
-  const [y,m] = monthPicker.value.split('-').map(Number);
-  DAYS = Array.from(
-    {length:new Date(y,m,0).getDate()},
-    (_,i)=>`${y}-${String(m).padStart(2,'0')}-${String(i+1).padStart(2,'0')}`
-  );
+function clearPreview(){
+  document.querySelectorAll('.cell').forEach(c=>{
+    c.classList.remove('preview','blocked');
+  });
+}
+
+/* ================= DRAG LOGIC ================= */
+function startDrag(room, day){
+  if (isBooked(room, day)) return;
+  DRAGGING=true;
+  DRAG_ROOM=room;
+  DRAG_START=day;
+  LAST_DAY=day;
+}
+
+function dragOver(day){
+  if (!DRAGGING) return;
+  clearPreview();
+
+  const [a,b]=DRAG_START<day?[DRAG_START,day]:[day,DRAG_START];
+
+  for (const d of DAYS){
+    if (d<a||d>b) continue;
+
+    if (isBooked(DRAG_ROOM,d)){
+      LAST_DAY=null;
+      document.querySelectorAll(`[data-room="${DRAG_ROOM}"][data-day="${d}"]`)
+        .forEach(c=>c.classList.add('blocked'));
+      return;
+    }
+
+    document.querySelectorAll(`[data-room="${DRAG_ROOM}"][data-day="${d}"]`)
+      .forEach(c=>c.classList.add('preview'));
+    LAST_DAY=day;
+  }
+}
+
+function endDrag(){
+  if (!DRAGGING){ clearPreview(); return; }
+  DRAGGING=false;
+  clearPreview();
+  if (!LAST_DAY) return;
+
+  openNew(DRAG_ROOM, DRAG_START, LAST_DAY);
 }
 
 /* ================= RENDER ================= */
-function render() {
-  app.innerHTML = '';
+function render(){
+  app.innerHTML='';
 
-  const header = document.createElement('div');
-  header.className = 'header';
-  header.appendChild(document.createElement('div')).className = 'room';
+  const header=document.createElement('div');
+  header.className='header';
+  header.appendChild(document.createElement('div')).className='room';
   DAYS.forEach(d=>{
     const c=document.createElement('div');
     c.className='cell';
@@ -196,27 +229,33 @@ function render() {
 
     DAYS.forEach(d=>{
       const cell=document.createElement('div');
+      cell.dataset.room=r.name;
+      cell.dataset.day=d;
+
       const b=BOOKINGS.find(x=>x.room===r.name && d>=x.check_in && d<x.check_out);
       if (b){
         cell.className=`cell booked src-${b.source.toLowerCase().replace(/[^a-z]/g,'')}`;
         cell.onclick=()=>openEdit(b);
       } else {
         cell.className='cell free';
-        cell.onclick=()=>openNew(r.name,d);
+        cell.onmousedown=()=>startDrag(r.name,d);
+        cell.onmouseenter=()=>dragOver(d);
+        cell.onmouseup=endDrag;
+        cell.ontouchstart=()=>startDrag(r.name,d);
+        cell.ontouchend=endDrag;
       }
       row.appendChild(cell);
     });
-
     app.appendChild(row);
   });
 }
 
 /* ================= MODAL ================= */
-function openNew(room, day){
+function openNew(room,start,end){
   EDITING=null;
   roomInput.value=room;
-  checkInInput.value=day;
-  const d=new Date(day); d.setDate(d.getDate()+1);
+  checkInInput.value=start;
+  const d=new Date(end); d.setDate(d.getDate()+1);
   checkOutInput.value=d.toISOString().slice(0,10);
   sourceInput.value='Airbnb';
   deleteBtn.style.display='none';
@@ -236,46 +275,41 @@ function openEdit(b){
 function closeModal(){ modal.style.display='none'; }
 
 /* ================= SAVE / DELETE ================= */
-saveBtn.onclick = async ()=>{
-  if (checkOutInput.value <= checkInInput.value) {
-    alert('Checkout must be later than checkin');
+saveBtn.onclick=async()=>{
+  if (checkOutInput.value<=checkInInput.value){
+    alert('Checkout must be later');
     return;
   }
-  const room = ROOMS.find(r=>r.name===roomInput.value);
-  const payload = {
-    room_id: room.id,
-    check_in: checkInInput.value,
-    check_out: checkOutInput.value,
-    source: sourceInput.value
+  const room=ROOMS.find(r=>r.name===roomInput.value);
+  const payload={
+    room_id:room.id,
+    check_in:checkInInput.value,
+    check_out:checkOutInput.value,
+    source:sourceInput.value
   };
-
   let res;
   if (EDITING){
-    res = await sb.from('bookings').update(payload).eq('id', EDITING.id);
+    res=await sb.from('bookings').update(payload).eq('id',EDITING.id);
   } else {
-    res = await sb.from('bookings').insert(payload);
+    res=await sb.from('bookings').insert(payload);
   }
   if (res.error){ alert(res.error.message); return; }
   closeModal();
 };
 
-deleteBtn.onclick = async ()=>{
+deleteBtn.onclick=async()=>{
   if (!EDITING) return;
-  if (!confirm('Delete this booking?')) return;
-  const { error } = await sb.from('bookings').delete().eq('id', EDITING.id);
-  if (error) alert(error.message);
+  if (!confirm('Delete booking?')) return;
+  await sb.from('bookings').delete().eq('id',EDITING.id);
   closeModal();
 };
 
 /* ================= REALTIME ================= */
 function setupRealtime(){
-  sb.channel('bookings-rt')
-    .on('postgres_changes',
-        { event:'*', schema:'public', table:'bookings' },
-        ()=> loadAll())
+  sb.channel('rt-bookings')
+    .on('postgres_changes',{event:'*',schema:'public',table:'bookings'},loadAll)
     .subscribe();
 }
 </script>
-
 </body>
 </html>
