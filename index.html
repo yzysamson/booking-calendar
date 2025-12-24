@@ -25,7 +25,7 @@ body{
 }
 .topbar input{padding:6px;font-size:14px}
 
-/* ===== LEGEND / FILTER ===== */
+/* ===== LEGEND ===== */
 .legend{
   display:flex;
   gap:8px;
@@ -59,7 +59,7 @@ body{
 
 /* ===== Y AXIS ===== */
 .room{
-  width:96px;                /* 👈 缩小 */
+  width:92px;
   padding:6px 6px;
   font-size:12px;
   background:#fafafa;
@@ -100,9 +100,9 @@ body{
   border:1px solid #eee;
   cursor:pointer;
   display:flex;
-  align-items:center;        /* 👈 X 轴居中 */
-  justify-content:center;    /* 👈 X 轴居中 */
-  font-size:12px;            /* 👈 字体统一 */
+  align-items:center;
+  justify-content:center;
+  font-size:12px;
 }
 .cell.booked{color:#fff}
 .cell.selecting::after{
@@ -151,6 +151,11 @@ body{
 .actions{display:flex;gap:8px}
 .actions button{flex:1}
 .actions button:disabled{opacity:.4}
+.conflict-text{
+  color:#c00;
+  font-size:12px;
+  margin-top:4px
+}
 </style>
 </head>
 
@@ -181,6 +186,10 @@ body{
 
     <label>Source</label>
     <select id="sourceInput"></select>
+
+    <div class="conflict-text" id="conflictText" style="display:none">
+      Date range conflicts with existing booking
+    </div>
 
     <div class="actions">
       <button id="saveBtn">Save</button>
@@ -218,6 +227,7 @@ const sourceInput=document.getElementById('sourceInput');
 const saveBtn=document.getElementById('saveBtn');
 const deleteBtn=document.getElementById('deleteBtn');
 const modalTitle=document.getElementById('modalTitle');
+const conflictText=document.getElementById('conflictText');
 const monthPicker=document.getElementById('monthPicker');
 
 /* ===== INIT ===== */
@@ -238,11 +248,25 @@ async function loadAll(){
 /* ===== LEGEND ===== */
 function buildLegend(){
   legend.innerHTML='';
+
+  const all=document.createElement('div');
+  all.className='legend-item active';
+  all.textContent='Show All';
+  all.onclick=()=>{
+    FILTER.clear();
+    document.querySelectorAll('.legend-item')
+      .forEach(el=>el.classList.remove('active'));
+    all.classList.add('active');
+    render();
+  };
+  legend.appendChild(all);
+
   SOURCES.forEach(s=>{
     const el=document.createElement('div');
     el.className='legend-item';
     el.innerHTML=`<span class="legend-color src-${norm(s)}"></span>${s}`;
     el.onclick=()=>{
+      all.classList.remove('active');
       FILTER.has(s)?FILTER.delete(s):FILTER.add(s);
       el.classList.toggle('active');
       render();
@@ -276,10 +300,11 @@ function buildDays(){
 
 /* ===== CONFLICT CHECK ===== */
 function hasConflict(roomId,ci,co,ignoreId=null){
+  if(co<=ci) return true;
   return BOOKINGS.some(b=>{
     if(b.room_id!==roomId) return false;
     if(ignoreId && b.id===ignoreId) return false;
-    return ci < b.check_out && co > b.check_in;
+    return ci<b.check_out && co>b.check_in;
   });
 }
 
@@ -290,6 +315,7 @@ function validate(){
   const conflict=hasConflict(roomId,ci,co,editingBooking?.id);
   saveBtn.disabled=conflict;
   saveBtn.textContent=conflict?'Conflict':(editingBooking?'Update':'Save');
+  conflictText.style.display=conflict?'block':'none';
 }
 
 /* ===== CLICK CELL ===== */
@@ -312,8 +338,10 @@ function onCellClick(el){
     return;
   }
 
-  let ci=selectState.checkin,co=date;
-  if(co<=ci)[ci,co]=[co,ci];
+  let ci=selectState.checkin;
+  let co=date;
+  if(co<=ci) co=new Date(new Date(ci).getTime()+86400000).toISOString().slice(0,10);
+
   openNew(room,ci,co);
   selectState=null;
 }
@@ -325,6 +353,10 @@ function openNew(room,ci,co){
   roomInput.value=ROOMS.find(r=>r.name===room).id;
   checkinInput.value=ci;
   checkoutInput.value=co;
+
+  roomInput.disabled=true;
+  checkinInput.disabled=true;
+
   deleteBtn.style.display='none';
   modal.style.display='block';
   validate();
@@ -333,16 +365,23 @@ function openNew(room,ci,co){
 function openEdit(b){
   modalTitle.textContent='Edit Booking';
   editingBooking=b;
+
   roomInput.value=b.room_id;
   checkinInput.value=b.check_in;
   checkoutInput.value=b.check_out;
   sourceInput.value=b.source;
+
+  roomInput.disabled=false;
+  checkinInput.disabled=false;
+
   deleteBtn.style.display='block';
   modal.style.display='block';
   validate();
 }
 
-function closeModal(){modal.style.display='none'}
+function closeModal(){
+  modal.style.display='none';
+}
 
 /* ===== SAVE / DELETE ===== */
 saveBtn.onclick=async()=>{
@@ -386,7 +425,7 @@ function getCellBooking(room,date){
 /* ===== RENDER ===== */
 function render(){
   let html='';
-  const cols=`96px repeat(${DAYS.length},56px)`;
+  const cols=`92px repeat(${DAYS.length},56px)`;
 
   html+=`
   <div class="header" style="grid-template-columns:${cols}">
