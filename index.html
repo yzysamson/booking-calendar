@@ -12,19 +12,20 @@ body{margin:0;font-family:system-ui;background:#fff;color:#111}
 
 /* ===== TOP ===== */
 .topbar{
-  padding:8px 10px;border-bottom:1px solid #e5e5e5;
-  display:flex;gap:12px;align-items:center;overflow-x:auto
+  padding:6px 8px;
+  border-bottom:1px solid #e5e5e5;
+  display:flex;gap:10px;align-items:center;overflow-x:auto
 }
-.topbar input{padding:6px;font-size:14px}
+.topbar input{padding:4px 6px;font-size:14px}
 
 /* ===== LEGEND ===== */
-.legend{display:flex;gap:8px;font-size:12px;white-space:nowrap}
+.legend{display:flex;gap:6px;font-size:12px;white-space:nowrap}
 .legend-item{
   display:flex;align-items:center;gap:4px;
-  padding:4px 6px;border-radius:6px;cursor:pointer
+  padding:3px 6px;border-radius:6px;cursor:pointer
 }
 .legend-item.active{background:#eee}
-.legend-color{width:12px;height:12px;border-radius:3px}
+.legend-color{width:10px;height:10px;border-radius:3px}
 
 /* ===== GRID ===== */
 .scroll-x{overflow-x:auto}
@@ -32,7 +33,7 @@ body{margin:0;font-family:system-ui;background:#fff;color:#111}
 
 /* ===== Y AXIS ===== */
 .room{
-  width:92px;padding:6px;font-size:12px;
+  width:88px;padding:6px;font-size:12px;
   background:#fafafa;border-right:1px solid #e5e5e5;
   position:sticky;left:0;z-index:3
 }
@@ -52,32 +53,27 @@ body{margin:0;font-family:system-ui;background:#fff;color:#111}
 
 /* ===== CELL ===== */
 .cell{
-  position:relative;height:36px;border:1px solid #eee;
+  position:relative;height:34px;border:1px solid #eee;
   display:flex;align-items:center;justify-content:center;
-  font-size:12px;cursor:pointer;
-  transition:transform .15s ease
+  font-size:12px;cursor:pointer
 }
 
-/* ===== iOS-style selecting animation ===== */
-@keyframes iosPulse {
-  0%   { opacity:.25; transform:scale(1); }
-  50%  { opacity:.4;  transform:scale(1.03); }
-  100% { opacity:.25; transform:scale(1); }
+/* selecting */
+@keyframes iosPulse{
+  0%{opacity:.25;transform:scale(1)}
+  50%{opacity:.4;transform:scale(1.03)}
+  100%{opacity:.25;transform:scale(1)}
 }
-
 .cell.selecting::after{
-  content:"";
-  position:absolute;
-  inset:2px;
+  content:"";position:absolute;inset:2px;
   border-radius:6px;
   background:rgba(255,56,92,.35);
   animation:iosPulse 1.2s ease-in-out infinite;
-  pointer-events:none;
 }
 
-/* ===== MERGED BAR ===== */
+/* ===== BAR ===== */
 .bar{
-  height:36px;color:#fff;font-size:11px;
+  height:34px;color:#fff;font-size:11px;
   display:flex;align-items:center;justify-content:center;
   border-radius:4px;cursor:pointer
 }
@@ -93,22 +89,42 @@ body{margin:0;font-family:system-ui;background:#fff;color:#111}
 
 /* ===== MODAL ===== */
 .modal{
-  position:fixed;inset:0;background:rgba(0,0,0,.35);
+  position:fixed;inset:0;
+  background:rgba(0,0,0,.35);
   display:none;z-index:1000
 }
 .modal-box{
-  background:#fff;border-radius:16px 16px 0 0;
-  padding:12px;position:absolute;bottom:0;left:0;right:0
+  background:#fff;
+  border-radius:14px 14px 0 0;
+  padding:10px 12px;
+  position:absolute;bottom:0;left:0;right:0
 }
-.modal-box label{font-size:12px;color:#555}
+.modal-box label{
+  font-size:11px;color:#555;
+  margin-top:2px;display:block
+}
+
+/* 🔑 所有输入统一高度 */
 .modal-box input,
 .modal-box select{
-  width:100%;padding:8px;margin:4px 0;
-  font-size:14px;border-radius:8px;border:1px solid #ddd
+  width:100%;
+  height:36px;
+  padding:6px 8px;
+  margin:4px 0;
+  font-size:14px;
+  border-radius:8px;
+  border:1px solid #ddd;
+  appearance:none;
 }
+
+/* button */
 .modal-box button{
-  width:100%;padding:10px;margin:6px 0;
-  font-size:15px;border-radius:10px;border:1px solid #ddd
+  height:38px;
+  padding:8px;
+  margin:6px 0;
+  font-size:15px;
+  border-radius:10px;
+  border:1px solid #ddd
 }
 .actions{display:flex;gap:8px}
 .actions button{flex:1}
@@ -225,7 +241,7 @@ function buildDays(){
 
 function render(){
   let html='';
-  const cols=`92px repeat(${DAYS.length},56px)`;
+  const cols=`88px repeat(${DAYS.length},56px)`;
 
   html+=`<div class="header" style="grid-template-columns:${cols}">
     <div class="room corner">
@@ -274,21 +290,19 @@ function onCellClick(el){
     return;
   }
 
-  openNew(room,date);
+  openNew(room,selectState.date,date);
   selectState=null;
 }
 
-function openNew(room,ci){
+function openNew(room,ci,co){
   modalTitle.textContent='New Booking';
   saveBtn.textContent='Save';
   editingBooking=null;
 
   roomInput.value=ROOMS.find(r=>r.name===room).id;
   checkinInput.value=ci;
-
-  checkinInput.value = ci;
-  checkoutInput.value = '';
-  checkoutInput.min = ci;
+  checkoutInput.value=co;
+  checkoutInput.min=ci;
 
   roomInput.disabled=true;
   checkinInput.disabled=true;
