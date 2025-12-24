@@ -8,35 +8,36 @@
 body{
   margin:0;
   font-family:system-ui, -apple-system, BlinkMacSystemFont;
-  background:#faf7f2;      /* 浅米色 */
+  background:#faf7f2;
   color:#111;
+  overflow:hidden;                 /* 🔒 整页不允许横滑 */
 }
 
 /* =====================================================
-   TOP BAR
+   TOP BAR (FREEZE)
 ===================================================== */
 .topbar{
-  padding:8px;
-  border-bottom:1px solid #e5e5e5;
-  display:flex;
-  gap:10px;
-  align-items:center;
-  overflow-x:auto;
-  background:#faf7f2;
   position:fixed;
   top:0;
   left:0;
   right:0;
   z-index:100;
+  padding:8px;
+  border-bottom:1px solid #e5e5e5;
+  display:flex;
+  gap:10px;
+  align-items:center;
+  background:#faf7f2;
 }
 
+/* Month input */
 .topbar input{
   padding:4px 6px;
   font-size:14px;
 }
 
 /* =====================================================
-   LEGEND
+   LEGEND (ONLY THIS CAN SCROLL X)
 ===================================================== */
 .legend{
   display:flex;
@@ -47,41 +48,32 @@ body{
   -webkit-overflow-scrolling:touch;
 }
 
-.legend-item{
-  display:flex;
-  align-items:center;
-  gap:4px;
-  padding:4px 6px;
-  border-radius:6px;
-  cursor:pointer;
-}
+/* =====================================================
+   CALENDAR AREA
+===================================================== */
 
-.legend-item.active{
-  background:#eee;
-}
-
-.legend-color{
-  width:10px;
-  height:10px;
-  border-radius:3px;
+/* 包住整个 calendar（不滚） */
+#calendar-scroll{
+  position:fixed;
+  top:52px;                        /* 紧贴 month selector 下 */
+  bottom:120px;                    /* 给 summary 让位 */
+  left:0;
+  right:0;
+  overflow:hidden;                 /* 🔒 禁止整体滚 */
+  background:#faf7f2;
 }
 
 /* =====================================================
-   CALENDAR SCROLL (FREEZE PANE MODEL)
+   X AXIS SCROLL ZONE (ONLY DATE CAN MOVE)
 ===================================================== */
 #calendar-scroll{
-  margin:0;
-  padding-top:52px;            /* 对齐 month select 下方 */
-  overflow-x:auto;             /* 只有 X 能滑 */
-  overflow-y:visible;          /* Y 自然滚 */
+  overflow-x:auto;                 /* ✅ 只有这里能横滑 */
   -webkit-overflow-scrolling:touch;
 }
 
-/* calendar 内容必须能横向展开 */
+/* calendar 内容必须能撑开 */
 #app{
   min-width:fit-content;
-  margin:0;
-  padding:0;
 }
 
 /* =====================================================
@@ -93,11 +85,11 @@ body{
 }
 
 /* =====================================================
-   FREEZE: DATE HEADER (TOP)
+   FREEZE: DATE HEADER (TOP, UNDER MONTH SELECT)
 ===================================================== */
 .header{
   position:sticky;
-  top:52px;                    /* 必须等于 padding-top */
+  top:0;                           /* 相对 calendar-scroll */
   z-index:20;
   background:#faf7f2;
 }
@@ -114,13 +106,13 @@ body{
 
   position:sticky;
   left:0;
-  z-index:10;
+  z-index:30;                      /* 永远盖在 X 上 */
 }
 
 /* 左上角 Date / Room */
 .header .room{
   background:#f3f1ec;
-  z-index:30;
+  z-index:40;
 }
 
 /* =====================================================
@@ -165,7 +157,6 @@ body{
 .cell{
   height:34px;
   border:1px solid #eee;
-  cursor:pointer;
   display:flex;
   align-items:center;
   justify-content:center;
@@ -188,7 +179,6 @@ body{
   align-items:center;
   justify-content:center;
   border-radius:4px;
-  cursor:pointer;
 }
 
 /* =====================================================
@@ -203,13 +193,20 @@ body{
 .src-walkinsoo{background:#8b4513}
 
 /* =====================================================
-   SUMMARY (NORMAL FLOW, NO BLOCKING)
+   SUMMARY (FREEZE BOTTOM)
 ===================================================== */
 #summary{
+  position:fixed;
+  bottom:0;
+  left:0;
+  right:0;
+  z-index:100;
   border-top:1px solid #e5e5e5;
   padding:10px;
   font-size:13px;
   background:#faf7f2;
+  max-height:120px;
+  overflow-y:auto;                 /* 只在 summary 内滚 */
 }
 
 .summary-title{
@@ -221,11 +218,6 @@ body{
   display:flex;
   justify-content:space-between;
   padding:4px 0;
-  cursor:pointer;
-}
-
-.summary-row:hover{
-  background:#f1eee9;
 }
 
 /* =====================================================
