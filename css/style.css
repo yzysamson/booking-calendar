@@ -276,3 +276,65 @@ html, body {
     font-size: 10px;
   }
 }
+
+/* ===== SUMMARY SECTION ===== */
+.summary-section {
+  margin-bottom: 12px;
+}
+
+.summary-header {
+  display: flex;
+  justify-content: space-between;
+  font-weight: 600;
+  padding: 6px 0;
+  border-bottom: 1px solid #eee;
+}
+
+.summary-total {
+  font-weight: 600;
+}
+
+.summary-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 4px 0;
+  font-size: 12px; /* 和 room 一致 */
+}
+
+/* ===== MODAL ACTIONS ===== */
+.actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.actions button {
+  flex: 1;
+  height: 44px;               /* 关键：变高 */
+  font-size: 14px;
+  border-radius: 10px;
+  border: none;
+  cursor: pointer;
+}
+
+/* Primary (Save / Update) */
+#saveBtn {
+  background: #111;
+  color: #fff;
+}
+
+/* Disabled */
+#saveBtn:disabled {
+  opacity: 0.4;
+}
+
+/* Delete */
+#deleteBtn {
+  background: #ffecec;
+  color: #c00;
+}
+
+/* Cancel */
+.actions button:last-child {
+  background: #f2f2f2;
+}
