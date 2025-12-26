@@ -79,7 +79,7 @@ function render(){
       html += `
   <div class="bar src-${norm(b.source)}"
        style="grid-column:span ${span}"
-       onclick="openEdit(${b.id})">
+       data-id="${b.id}">
     <span class="bar-price">${formatRM(b.price)}</span>
   </div>
 `;
@@ -147,7 +147,17 @@ let longPressBookingId = null;
 function bindLongPress() {
   document.querySelectorAll('.bar').forEach(bar => {
 
+    /* ===== 普通点击 → Edit ===== */
+    bar.addEventListener('click', e => {
+      e.stopPropagation();
+      openEdit(Number(bar.dataset.id));
+    });
+
+    /* ===== 长按 ===== */
     bar.addEventListener('touchstart', e => {
+      // 关键：告诉 Safari 这是手势，不是滚动
+      e.preventDefault();
+
       const id = Number(bar.dataset.id);
       longPressBookingId = id;
 
@@ -156,7 +166,7 @@ function bindLongPress() {
       longPressTimer = setTimeout(() => {
         openLongPressMenu(t.clientX, t.clientY);
       }, 500);
-    });
+    }, { passive: false }); // ⬅️ 非常重要
 
     bar.addEventListener('touchend', () => {
       clearTimeout(longPressTimer);
@@ -167,6 +177,7 @@ function bindLongPress() {
     });
   });
 }
+
 
 function openLongPressMenu(x, y) {
   const menu = document.getElementById('longPressMenu');
