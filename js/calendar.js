@@ -110,3 +110,25 @@ function buildSelects(){
     sourceInput.appendChild(opt);
   });
 }
+
+// js/calendar.js
+
+function onCellClick(el){
+  const room = el.dataset.room;
+  const date = el.dataset.date;
+
+  // clear previous selecting
+  document.querySelectorAll('.cell.selecting')
+    .forEach(c => c.classList.remove('selecting'));
+
+  // start selecting
+  if (!selectState || selectState.room !== room || date <= selectState.checkin){
+    selectState = { room, checkin: date };
+    el.classList.add('selecting');
+    return;
+  }
+
+  // end selecting → open modal
+  openNew(room, selectState.checkin, date);
+  selectState = null;
+}
