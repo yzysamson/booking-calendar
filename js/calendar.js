@@ -88,3 +88,25 @@ function render(){
 
   app.innerHTML = html;
 }
+
+// js/calendar.js
+
+function buildSelects(){
+  // Room select
+  roomInput.innerHTML = '';
+  ROOMS.forEach(r => {
+    const opt = document.createElement('option');
+    opt.value = r.id;
+    opt.textContent = r.name;
+    roomInput.appendChild(opt);
+  });
+
+  // Source select
+  sourceInput.innerHTML = '';
+  SOURCES.forEach(s => {
+    const opt = document.createElement('option');
+    opt.value = s;
+    opt.textContent = s;
+    sourceInput.appendChild(opt);
+  });
+}
