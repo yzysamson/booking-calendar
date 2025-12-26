@@ -166,3 +166,20 @@ html, body {
     width: 72px;
   }
 }
+
+.room {
+  position: sticky;
+  left: 0;
+  z-index: 4;
+}
+
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+}
+
+.header .room {
+  z-index: 6; /* 左上角永远最高 */
+}
+
