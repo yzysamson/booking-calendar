@@ -1,5 +1,7 @@
 // js/calendar.js
 
+console.log("done 1")
+
 /* ===== LEGEND ===== */
 function buildLegend(){
   legend.innerHTML = '';
