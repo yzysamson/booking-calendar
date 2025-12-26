@@ -25,6 +25,16 @@ function openEdit(id){
   deleteBtn.style.display='block';
   validate();
   modal.style.display='block';
+  // ===== bind Drag button AFTER modal opened =====
+const dragBtn = document.getElementById('lpDrag');
+if (dragBtn) {
+  dragBtn.onclick = () => {
+    DRAG_MODE = true;
+    closeModal();   // 关掉 Edit 弹窗
+    alert('Drag mode enabled. Drag the booking.');
+  };
+}
+
 }
 
 function closeModal(){modal.style.display='none'}

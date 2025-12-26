@@ -1,5 +1,5 @@
 
-console.log("done 8")
+console.log("done 10")
 
 /* ===== LEGEND ===== */
 function buildLegend(){
@@ -142,19 +142,6 @@ function onCellClick(el, e){
 }
 
 let DRAG_MODE = false;
-
-document.addEventListener('DOMContentLoaded', () => {
-  const dragBtn = document.getElementById('lpDrag');
-  if (!dragBtn) {
-    console.warn('lpDrag not found');
-    return;
-  }
-
-  dragBtn.onclick = () => {
-    alert('Drag clicked for booking ID: ' + longPressBookingId);
-    closeLongPressMenu();
-  };
-});
 
 
 render();
