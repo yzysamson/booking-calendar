@@ -287,7 +287,6 @@ html, body {
   justify-content: space-between;
   font-weight: 600;
   padding: 6px 0;
-  border-bottom: 1px solid #eee;
 }
 
 .summary-total {
@@ -300,6 +299,16 @@ html, body {
   padding: 4px 0;
   font-size: 12px; /* 和 room 一致 */
 }
+
+.summary-section {
+  margin-bottom: 16px;   /* 两个 section 之间的距离 */
+}
+
+.summary-row {
+  padding: 4px 0;
+  font-size: 12px;
+}
+
 
 /* ===== MODAL ACTIONS ===== */
 .actions {
