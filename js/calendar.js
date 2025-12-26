@@ -1,6 +1,6 @@
 // js/calendar.js
 
-console.log("done 2")
+console.log("done 3")
 
 /* ===== LEGEND ===== */
 function buildLegend(){
@@ -180,10 +180,19 @@ function closeLongPressMenu() {
   longPressBookingId = null;
 }
 
-document.getElementById('lpDrag').onclick = () => {
-  alert('Drag clicked for booking ID: ' + longPressBookingId);
-  closeLongPressMenu();
-};
+document.addEventListener('DOMContentLoaded', () => {
+  const dragBtn = document.getElementById('lpDrag');
+  if (!dragBtn) {
+    console.warn('lpDrag not found');
+    return;
+  }
+
+  dragBtn.onclick = () => {
+    alert('Drag clicked for booking ID: ' + longPressBookingId);
+    closeLongPressMenu();
+  };
+});
+
 
 render();
 bindLongPress();
