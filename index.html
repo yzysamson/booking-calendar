@@ -74,48 +74,6 @@
 
 <!-- ===================================================== -->
 
-<!-- ===== ACTION SHEET BACKDROP ===== -->
-<div id="sheetBackdrop"
-     style="
-       display:none;
-       position:fixed;
-       inset:0;
-       background:rgba(0,0,0,.25);
-       z-index:999;
-     "
-     onclick="closeActionSheet()">
-</div>
-
-<!-- ===== ACTION SHEET ===== -->
-<div id="actionSheet"
-     class="action-sheet"
-     style="
-       display:none;
-       position:fixed;
-       left:50%;
-       bottom:20px;
-       transform:translateX(-50%);
-       background:#fff;
-       border-radius:12px;
-       box-shadow:0 10px 30px rgba(0,0,0,.2);
-       z-index:1000;
-       min-width:200px;
-     ">
-
-  <button id="editBtn"
-          style="width:100%;padding:14px;border:none;background:none;font-size:15px;">
-    Edit
-  </button>
-
-  <button id="dragBtn"
-          style="width:100%;padding:14px;border:none;background:none;font-size:15px;">
-    Drag
-  </button>
-
-  <button onclick="closeActionSheet()"
-          style="width:100%;padding:14px;border:none;background:#f5f5f5;font-size:15px;">
-    Cancel
-  </button>
 </div>
 
 
@@ -146,7 +104,6 @@
 <!-- 8️⃣ main：入口（最后执行） -->
 <script src="js/main.js"></script>
 
-<script src="js/drag.js"></script>
 
 </body>
 </html>

@@ -74,14 +74,13 @@ function render(){
       }
 
       const span = (new Date(b.check_out) - new Date(d)) / 86400000;
-      html += `<div class="bar src-${norm(b.source)}"
-  data-id="${b.id}"
-  data-room="${b.room}"
-  data-checkin="${b.check_in}"
-  data-checkout="${b.check_out}"
-  style="grid-column:span ${span}">
-  <span class="bar-price">${formatRM(b.price)}</span>
-</div>`;
+      html += `
+  <div class="bar src-${norm(b.source)}"
+       style="grid-column:span ${span}"
+       onclick="openEdit(${b.id})">
+    <span class="bar-price">${formatRM(b.price)}</span>
+  </div>
+`;
       i += span;
     }
 
