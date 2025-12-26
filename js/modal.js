@@ -6,6 +6,7 @@ function openNew(room,ci,co){
   checkoutInput.value=co;
   priceInput.value='';
   remarkInput.value='';
+  saveBtn.textContent = 'Save';
   saveBtn.disabled=true;
   deleteBtn.style.display='none';
   modal.style.display='block';
@@ -20,6 +21,7 @@ function openEdit(id){
   sourceInput.value=editing.source;
   priceInput.value=editing.price||'';
   remarkInput.value=editing.remark||'';
+  saveBtn.textContent = 'Update';
   deleteBtn.style.display='block';
   validate();
   modal.style.display='block';
