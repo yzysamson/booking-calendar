@@ -15,17 +15,23 @@
 <body>
 
 <!-- ===== TOP BAR ===== -->
-<div class="topbar">
-  <input type="month" id="monthPicker">
-  <div class="legend" id="legend"></div>
+<div class="page">
+
+  <!-- TOP BAR -->
+  <div class="topbar">
+    <input type="month" id="monthPicker">
+    <div class="legend" id="legend"></div>
+  </div>
+
+  <!-- SCROLLABLE CALENDAR -->
+  <div class="content">
+    <div id="app"></div>
+  </div>
+
+  <!-- FIXED SUMMARY -->
+  <div id="summary"></div>
+
 </div>
-
-<!-- ===== CALENDAR ===== -->
-<div id="app"></div>
-
-<!-- ===== SUMMARY ===== -->
-<div id="summary"></div>
-
 <!-- ===== MODAL ===== -->
 <div class="modal" id="modal">
   <div class="modal-box">
