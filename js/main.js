@@ -26,17 +26,29 @@ loadAll();
 
 const summarySheet = document.getElementById('summarySheet');
 const summaryTrigger = document.getElementById('summaryTrigger');
+const summaryBackdrop = document.getElementById('summaryBackdrop');
 const summaryHandle = document.querySelector('.summary-handle');
 
-if (summaryTrigger && summarySheet) {
-  summaryTrigger.onclick = () => {
-    summarySheet.classList.add('show');
-  };
+function openSummary(){
+  summarySheet.classList.add('show');
+  summaryBackdrop.classList.add('show');
 }
 
-if (summaryHandle && summarySheet) {
-  summaryHandle.onclick = () => {
-    summarySheet.classList.remove('show');
-  };
+function closeSummary(){
+  summarySheet.classList.remove('show');
+  summaryBackdrop.classList.remove('show');
 }
+
+if (summaryTrigger) {
+  summaryTrigger.onclick = openSummary;
+}
+
+if (summaryBackdrop) {
+  summaryBackdrop.onclick = closeSummary;
+}
+
+if (summaryHandle) {
+  summaryHandle.onclick = closeSummary;
+}
+
 
