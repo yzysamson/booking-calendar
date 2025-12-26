@@ -1,7 +1,5 @@
 /* ================= DRAG & CLICK (MINIMAL SAFE) ================= */
 
-console.log('drag.js LOADED 3');
-
 let pressTimer = null;
 let isDragging = false;
 let activeBar = null;
@@ -94,4 +92,21 @@ function cleanup(){
   activeBar = null;
 }
 
+console.log('drag.js ACTIVE');
+
+function bindDrag(){
+  console.log('bindDrag called');
+
+  document.querySelectorAll('.bar').forEach(bar => {
+    bar.addEventListener('click', () => {
+      alert('BAR CLICK');
+    });
+
+    bar.addEventListener('touchstart', () => {
+      alert('BAR TOUCHSTART');
+    });
+  });
+}
+
+// 暴露到全局（不管 module 与否）
 window.bindDrag = bindDrag;
