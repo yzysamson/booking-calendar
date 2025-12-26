@@ -105,6 +105,9 @@ function buildSelects(){
 
   // Source select
   sourceInput.innerHTML = '';
+
+  bindDrag();
+  
   SOURCES.forEach(s => {
     const opt = document.createElement('option');
     opt.value = s;
