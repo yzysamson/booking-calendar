@@ -1,6 +1,6 @@
 /* ================= DRAG & CLICK (MINIMAL SAFE) ================= */
 
-console.log('drag.js LOADED 222');
+console.log('drag.js LOADED 3');
 
 let pressTimer = null;
 let isDragging = false;

@@ -63,6 +63,7 @@ body{margin:0;font-family:system-ui;background:#fff;color:#111}
 /* ===== Disable text selection on booking bar ===== */
 .bar,
 .bar * {
+  touch-action: none; 
   -webkit-user-select: none; /* iOS Safari */
   user-select: none;
   -webkit-touch-callout: none; /* 禁止长按弹出 copy 菜单 */
