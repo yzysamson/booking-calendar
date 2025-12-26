@@ -286,7 +286,7 @@ html, body {
   display: flex;
   justify-content: space-between;
   font-weight: 600;
-  padding: 6px 0;
+  padding: 4px 0 2px; /* ⬅️ 下方 padding 变小 */
 }
 
 .summary-total {
@@ -294,10 +294,8 @@ html, body {
 }
 
 .summary-row {
-  display: flex;
-  justify-content: space-between;
-  padding: 4px 0;
-  font-size: 12px; /* 和 room 一致 */
+  padding: 2px 0;     /* ⬅️ 原本 4px，减半 */
+  font-size: 12px;
 }
 
 .summary-section {
