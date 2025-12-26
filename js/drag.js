@@ -1,6 +1,6 @@
 /* ================= DRAG & CLICK (MINIMAL SAFE) ================= */
 
-console.log('drag.js LOADED');
+console.log('drag.js LOADED 222');
 
 let pressTimer = null;
 let isDragging = false;
@@ -93,3 +93,5 @@ function cleanup(){
   isDragging = false;
   activeBar = null;
 }
+
+window.bindDrag = bindDrag;
