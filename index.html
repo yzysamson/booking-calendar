@@ -58,19 +58,6 @@
 
 <!-- 🔒 原 JS（一行没动） -->
 <script>
-/* ===== UTIL ===== */
-function norm(s){return s.toLowerCase().replace(/[^a-z]/g,'')}
-
-/* ===== SUPABASE ===== */
-const sb = supabase.createClient(
-  'https://pwscsukxfnbzjciuhtwl.supabase.co',
-  'YOUR_ANON_KEY'
-);
-
-const SOURCES=[
-  'Airbnb','Booking','Agoda','Trip','SLH',
-  'Walk-in (Wayne)','Walk-in (Soo)'
-];
 
 /* ===== STATE ===== */
 let ROOMS=[],BOOKINGS=[],DAYS=[];
