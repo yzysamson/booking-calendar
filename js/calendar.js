@@ -67,7 +67,7 @@ function render(){
         html += `<div class="cell"
           data-room="${r.name}"
           data-date="${d}"
-          onclick="onCellClick(this)">
+          onclick="onCellClick(this,event)">
         </div>`;
         i++;
         continue;
@@ -118,7 +118,9 @@ function buildSelects(){
 
 // js/calendar.js
 
-function onCellClick(el){
+function onCellClick(el, e){
+  // 如果点的是 bar 或 bar 里面，直接 return
+  if (e && e.target.closest('.bar')) return;
   const room = el.dataset.room;
   const date = el.dataset.date;
 

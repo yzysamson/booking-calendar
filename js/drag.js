@@ -98,9 +98,10 @@ function bindDrag(){
   console.log('bindDrag called');
 
   document.querySelectorAll('.bar').forEach(bar => {
-    bar.addEventListener('click', () => {
-      alert('BAR CLICK');
-    });
+    bar.addEventListener('click', (e) => {
+  e.stopPropagation();   // ⭐️ 关键
+  alert('BAR CLICK');
+});
 
     bar.addEventListener('touchstart', () => {
       alert('BAR TOUCHSTART');
