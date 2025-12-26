@@ -177,9 +177,11 @@ html, body {
   position: sticky;
   top: 0;
   z-index: 5;
+  background: #fff; 
 }
 
 .header .room {
   z-index: 6; /* 左上角永远最高 */
+  background: #fff; 
 }
 
