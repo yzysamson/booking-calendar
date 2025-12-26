@@ -28,9 +28,6 @@
     <div id="app"></div>
   </div>
 
-  <!-- FIXED SUMMARY -->
-  <div id="summary"></div>
-
 </div>
 <!-- ===== MODAL ===== -->
 <div class="modal" id="modal">
@@ -63,8 +60,16 @@
   </div>
 </div>
 
-<!-- ===================================================== -->
+<!-- ===== SUMMARY TRIGGER ===== -->
+<div id="summaryTrigger">Summary ▲</div>
 
+<!-- ===== SUMMARY BOTTOM SHEET ===== -->
+<div class="summary-sheet" id="summarySheet">
+  <div class="summary-handle"></div>
+  <div id="summaryContent"></div>
+</div>
+
+<!-- ===================================================== -->
 <!-- Supabase SDK -->
 <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 

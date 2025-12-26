@@ -23,3 +23,20 @@ deleteBtn.onclick=async()=>{
 };
 
 loadAll();
+
+const summarySheet = document.getElementById('summarySheet');
+const summaryTrigger = document.getElementById('summaryTrigger');
+const summaryHandle = document.querySelector('.summary-handle');
+
+if (summaryTrigger && summarySheet) {
+  summaryTrigger.onclick = () => {
+    summarySheet.classList.add('show');
+  };
+}
+
+if (summaryHandle && summarySheet) {
+  summaryHandle.onclick = () => {
+    summarySheet.classList.remove('show');
+  };
+}
+
