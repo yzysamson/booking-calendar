@@ -1,6 +1,6 @@
 // js/calendar.js
 
-console.log("done 5")
+console.log("done 8")
 
 /* ===== LEGEND ===== */
 function buildLegend(){
@@ -142,6 +142,8 @@ function onCellClick(el, e){
   selectState = null;
 }
 
+let editing = null;
+let DRAG_MODE = false;
 
 document.addEventListener('DOMContentLoaded', () => {
   const dragBtn = document.getElementById('lpDrag');
@@ -158,3 +160,78 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 render();
+bindDragMode();
+
+
+// ===== MORE MENU =====
+document.getElementById('moreBtn').onclick = () => {
+  document.getElementById('moreMenu').style.display = 'block';
+};
+
+document.getElementById('dragAction').onclick = () => {
+  DRAG_MODE = true;
+  document.getElementById('moreMenu').style.display = 'none';
+  closeModal(); // 关闭 edit 弹窗
+  alert('Drag mode enabled. Drag the booking.');
+};
+
+// 点空白关闭菜单（可选但推荐）
+document.addEventListener('click', e => {
+  if (!e.target.closest('#moreMenu') && !e.target.closest('#moreBtn')) {
+    document.getElementById('moreMenu').style.display = 'none';
+  }
+});
+
+function bindDragMode() {
+  document.querySelectorAll('.bar').forEach(bar => {
+
+    bar.onmousedown = e => {
+      if (!DRAG_MODE) return;
+      e.preventDefault();
+      startDrag(bar, e);
+    };
+
+    bar.ontouchstart = e => {
+      if (!DRAG_MODE) return;
+      e.preventDefault();
+      startDrag(bar, e.touches[0]);
+    };
+  });
+}
+
+let ghost = null;
+
+function startDrag(bar, e) {
+  ghost = bar.cloneNode(true);
+  ghost.style.position = 'fixed';
+  ghost.style.pointerEvents = 'none';
+  ghost.style.opacity = '0.8';
+  ghost.style.zIndex = 9999;
+  ghost.style.width = bar.offsetWidth + 'px';
+  document.body.appendChild(ghost);
+
+  moveGhost(e);
+
+  document.onmousemove = ev => moveGhost(ev);
+  document.ontouchmove = ev => moveGhost(ev.touches[0]);
+
+  document.onmouseup = endDrag;
+  document.ontouchend = endDrag;
+}
+
+function moveGhost(e) {
+  ghost.style.left = e.clientX - 30 + 'px';
+  ghost.style.top  = e.clientY - 20 + 'px';
+}
+
+function endDrag() {
+  document.onmousemove = null;
+  document.ontouchmove = null;
+  document.onmouseup = null;
+  document.ontouchend = null;
+
+  if (ghost) ghost.remove();
+  ghost = null;
+
+  DRAG_MODE = false; // ⭐️ 拖完自动退出
+}
