@@ -164,14 +164,14 @@ body{
 
 /* ================= SUMMARY SECTIONS ================= */
 .summary-section{
-  margin-bottom:16px;
+  margin-bottom:20px;
 }
 
 .summary-header{
   display:flex;
   justify-content:space-between;
   font-weight:600;
-  padding:4px 0 2px;
+  padding:2px 0 4px;
 }
 
 .summary-row{
