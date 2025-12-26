@@ -1,5 +1,5 @@
 
-console.log("done 10")
+console.log("done 11")
 
 /* ===== LEGEND ===== */
 function buildLegend(){
@@ -147,18 +147,6 @@ let DRAG_MODE = false;
 render();
 bindDragMode();
 
-
-// ===== MORE MENU =====
-document.getElementById('moreBtn').onclick = () => {
-  document.getElementById('moreMenu').style.display = 'block';
-};
-
-document.getElementById('dragAction').onclick = () => {
-  DRAG_MODE = true;
-  document.getElementById('moreMenu').style.display = 'none';
-  closeModal(); // 关闭 edit 弹窗
-  alert('Drag mode enabled. Drag the booking.');
-};
 
 // 点空白关闭菜单（可选但推荐）
 document.addEventListener('click', e => {
