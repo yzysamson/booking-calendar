@@ -270,8 +270,18 @@ html, body {
 
 /*==================auto font size ======================*/
 .bar {
+  height: 34px;
+  display: flex;
+  align-items: center;
   justify-content: center;
+  border-radius: 4px;
+  cursor: pointer;
   overflow: hidden;
+
+  /* 只禁止选字 */
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
 }
 
 .bar-price {
@@ -279,12 +289,12 @@ html, body {
   font-size: 12px;
 }
 
-/* 自动缩小（小 span / mobile） */
 @media (max-width: 768px) {
   .bar-price {
     font-size: 10px;
   }
 }
+
 
 /* ===== SUMMARY SECTION ===== */
 .summary-section {

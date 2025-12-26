@@ -1,74 +1,62 @@
-/* ================= DRAG & CLICK (MINIMAL SAFE) ================= */
+console.log('drag.js BASELINE');
 
-let pressTimer = null;
-let isDragging = false;
-let activeBar = null;
+let draggingBar = null;
 let ghost = null;
-
-const LONG_PRESS_MS = 350;
+let pressTimer = null;
+const LONG_PRESS = 350;
 
 /* ===== bind after render ===== */
 function bindDrag(){
   document.querySelectorAll('.bar').forEach(bar => {
 
-    // mobile
-    bar.addEventListener('touchstart', onPressStart, { passive:false });
-    bar.addEventListener('touchend', onPressEnd);
+    // 防止 cell 抢事件
+    bar.addEventListener('click', e => {
+      e.stopPropagation();
+      openEdit(Number(bar.dataset.id));
+    });
 
-    // desktop
-    bar.addEventListener('mousedown', onPressStart);
-    bar.addEventListener('mouseup', onPressEnd);
+    bar.addEventListener('touchstart', onStart, { passive:false });
+    bar.addEventListener('mousedown', onStart);
   });
 }
 
-/* ===== press start ===== */
-function onPressStart(e){
-  activeBar = e.currentTarget;
-  isDragging = false;
+window.bindDrag = bindDrag;
 
-  // 不阻止默认，不 stopPropagation
+/* ===== start ===== */
+function onStart(e){
+  e.stopPropagation();
+
+  draggingBar = e.currentTarget;
+
   pressTimer = setTimeout(() => {
-    isDragging = true;
-    startDrag(activeBar, e);
-  }, LONG_PRESS_MS);
+    startDrag(e);
+  }, LONG_PRESS);
 }
 
-/* ===== press end ===== */
-function onPressEnd(e){
-  clearTimeout(pressTimer);
+/* ===== drag start ===== */
+function startDrag(e){
+  if(!draggingBar) return;
 
-  // 👉 短点：edit
-  if(!isDragging && activeBar){
-    openEdit(Number(activeBar.dataset.id));
-  }
-
-  // 👉 如果刚拖完，清理
-  cleanup();
-}
-
-/* ===== start dragging ===== */
-function startDrag(bar, e){
-  isDragging = true;
-
-  ghost = bar.cloneNode(true);
+  ghost = draggingBar.cloneNode(true);
   ghost.style.position = 'fixed';
   ghost.style.zIndex = 9999;
   ghost.style.pointerEvents = 'none';
   ghost.style.opacity = '0.85';
-  ghost.style.width = bar.offsetWidth + 'px';
+  ghost.style.width = draggingBar.offsetWidth + 'px';
 
   document.body.appendChild(ghost);
   moveGhost(e);
 
   document.addEventListener('touchmove', onMove, { passive:false });
   document.addEventListener('mousemove', onMove);
+
+  document.addEventListener('touchend', endDrag);
+  document.addEventListener('mouseup', endDrag);
 }
 
 /* ===== move ===== */
 function onMove(e){
-  if(!isDragging) return;
-
-  e.preventDefault(); // 只在拖动时阻止滚动
+  e.preventDefault();
   moveGhost(e);
 }
 
@@ -78,36 +66,20 @@ function moveGhost(e){
   ghost.style.top  = p.clientY - 20 + 'px';
 }
 
-/* ===== cleanup ===== */
-function cleanup(){
+/* ===== end ===== */
+function endDrag(){
+  clearTimeout(pressTimer);
+
   document.removeEventListener('touchmove', onMove);
   document.removeEventListener('mousemove', onMove);
+
+  document.removeEventListener('touchend', endDrag);
+  document.removeEventListener('mouseup', endDrag);
 
   if(ghost){
     ghost.remove();
     ghost = null;
   }
 
-  isDragging = false;
-  activeBar = null;
+  draggingBar = null;
 }
-
-console.log('drag.js ACTIVE');
-
-function bindDrag(){
-  console.log('bindDrag called');
-
-  document.querySelectorAll('.bar').forEach(bar => {
-    bar.addEventListener('click', (e) => {
-  e.stopPropagation();   // ⭐️ 关键
-  alert('BAR CLICK');
-});
-
-    bar.addEventListener('touchstart', () => {
-      alert('BAR TOUCHSTART');
-    });
-  });
-}
-
-// 暴露到全局（不管 module 与否）
-window.bindDrag = bindDrag;
