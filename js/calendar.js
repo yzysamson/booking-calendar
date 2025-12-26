@@ -1,45 +1,90 @@
-function buildDays(){
-  const [y,m]=monthPicker.value.split('-').map(Number);
-  DAYS=[...Array(new Date(y,m,0).getDate())]
-    .map((_,i)=>`${y}-${String(m).padStart(2,'0')}-${String(i+1).padStart(2,'0')}`);
+// js/calendar.js
+
+/* ===== LEGEND ===== */
+function buildLegend(){
+  legend.innerHTML = '';
+
+  const all = document.createElement('div');
+  all.className = 'legend-item active';
+  all.textContent = 'All';
+  all.onclick = () => {
+    FILTER.clear();
+    BOOKINGS.forEach(b => delete b.__hidden);
+    render();
+  };
+  legend.appendChild(all);
+
+  SOURCES.forEach(s => {
+    const el = document.createElement('div');
+    el.className = 'legend-item';
+    el.innerHTML = `<span class="legend-color src-${norm(s)}"></span>${s}`;
+    el.onclick = () => {
+      FILTER.has(s) ? FILTER.delete(s) : FILTER.add(s);
+      el.classList.toggle('active');
+      render();
+    };
+    legend.appendChild(el);
+  });
 }
 
-function render(){
-  let html='';
-  const cols=`88px repeat(${DAYS.length},56px)`;
+/* ===== DAYS ===== */
+function buildDays(){
+  const [y, m] = monthPicker.value.split('-').map(Number);
+  DAYS = [...Array(new Date(y, m, 0).getDate())]
+    .map((_, i) =>
+      `${y}-${String(m).padStart(2,'0')}-${String(i+1).padStart(2,'0')}`
+    );
+}
 
-  html+=`<div class="header" style="grid-template-columns:${cols}">
+/* ===== CALENDAR RENDER ===== */
+function render(){
+  let html = '';
+  const cols = `88px repeat(${DAYS.length},56px)`;
+
+  html += `<div class="header" style="grid-template-columns:${cols}">
     <div class="room corner">
       <span class="corner-date">Date</span>
       <span class="corner-room">Room</span>
     </div>`;
-  DAYS.forEach(d=>html+=`<div class="cell">${d.slice(8)}</div>`);
-  html+=`</div>`;
 
-  ROOMS.forEach(r=>{
-    html+=`<div class="row" style="grid-template-columns:${cols}">
+  DAYS.forEach(d => html += `<div class="cell">${d.slice(8)}</div>`);
+  html += `</div>`;
+
+  ROOMS.forEach(r => {
+    html += `<div class="row" style="grid-template-columns:${cols}">
       <div class="room">${r.name}</div>`;
-    let i=0;
-    while(i<DAYS.length){
-      const d=DAYS[i];
-      const b=BOOKINGS.find(x=>
+
+    let i = 0;
+    while (i < DAYS.length) {
+      const d = DAYS[i];
+      const b = BOOKINGS.find(x =>
         !x.__hidden &&
-        x.room===r.name &&
-        d>=x.check_in && d<x.check_out &&
-        (FILTER.size===0||FILTER.has(x.source))
+        x.room === r.name &&
+        d >= x.check_in && d < x.check_out &&
+        (FILTER.size === 0 || FILTER.has(x.source))
       );
-      if(!b){
-        html+=`<div class="cell" data-room="${r.name}" data-date="${d}"
-          onclick="onCellClick(this)"></div>`;
-        i++;continue;
+
+      if (!b) {
+        html += `<div class="cell"
+          data-room="${r.name}"
+          data-date="${d}"
+          onclick="onCellClick(this)">
+        </div>`;
+        i++;
+        continue;
       }
-      const span=(new Date(b.check_out)-new Date(d))/86400000;
-      html+=`<div class="bar src-${norm(b.source)}"
+
+      const span = (new Date(b.check_out) - new Date(d)) / 86400000;
+      html += `<div class="bar src-${norm(b.source)}"
         style="grid-column:span ${span}"
-        onclick="openEdit(${b.id})">${b.price||''}</div>`;
-      i+=span;
+        onclick="openEdit(${b.id})">
+        ${b.price || ''}
+      </div>`;
+      i += span;
     }
-    html+=`</div>`;
+
+    html += `</div>`;
   });
-  app.innerHTML=html;
+
+  app.innerHTML = html;
 }
