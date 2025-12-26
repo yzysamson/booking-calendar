@@ -43,8 +43,7 @@ function render(){
 
   html += `<div class="header" style="grid-template-columns:${cols}">
     <div class="room corner">
-      <span class="corner-date">Date</span>
-      <span class="corner-room">Room</span>
+      <span class="corner-date">Date | Room</span>
     </div>`;
 
   DAYS.forEach(d => html += `<div class="cell">${d.slice(8)}</div>`);
