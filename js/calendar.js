@@ -1,4 +1,3 @@
-// js/calendar.js
 
 console.log("done 8")
 
