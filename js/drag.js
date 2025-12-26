@@ -20,15 +20,18 @@ function bindDrag(){
 
 /* ===== press start ===== */
 function onPressStart(e){
-  e.preventDefault();
   activeBar = e.currentTarget;
   isDragging = false;
 
   pressTimer = setTimeout(() => {
     isDragging = true;
     startDrag(activeBar, e);
+
+    // ✅ 只有真正 drag 时才阻止默认
+    e.preventDefault();
   }, LONG_PRESS_MS);
 }
+
 
 /* ===== press end ===== */
 function onPressEnd(e){
