@@ -1,31 +1,32 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Booking Calendar</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Booking Calendar</title>
 
-<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+  <!-- Supabase SDK（必须） -->
+  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 
-<!-- ✅ 外部 CSS -->
-<link rel="stylesheet" href="css/style.css">
-
+  <!-- CSS -->
+  <link rel="stylesheet" href="css/style.css">
 </head>
 
 <body>
 
+<!-- ===== TOP BAR ===== -->
 <div class="topbar">
   <input type="month" id="monthPicker">
   <div class="legend" id="legend"></div>
 </div>
 
-<!-- CALENDAR -->
+<!-- ===== CALENDAR ===== -->
 <div id="app"></div>
 
-<!-- SUMMARY -->
+<!-- ===== SUMMARY ===== -->
 <div id="summary"></div>
 
-<!-- MODAL -->
+<!-- ===== MODAL ===== -->
 <div class="modal" id="modal">
   <div class="modal-box">
     <h3 id="modalTitle"></h3>
@@ -56,247 +57,33 @@
   </div>
 </div>
 
-<!-- 🔒 原 JS（一行没动） -->
-<script>
+<!-- ===================================================== -->
+<!-- ===================== SCRIPTS ======================= -->
+<!-- ===================================================== -->
 
-/* ===== STATE ===== */
-let ROOMS=[],BOOKINGS=[],DAYS=[];
-let FILTER=new Set();
-let selectState=null;
-let editing=null;
+<!-- 1️⃣ config：sb / SOURCES / util -->
+<script src="js/config.js"></script>
 
-/* ===== DOM ===== */
-const app=document.getElementById('app');
-const legend=document.getElementById('legend');
-const summary=document.getElementById('summary');
-const modal=document.getElementById('modal');
-const saveBtn=document.getElementById('saveBtn');
-const deleteBtn=document.getElementById('deleteBtn');
+<!-- 2️⃣ state：全局状态 -->
+<script src="js/state.js"></script>
 
-const roomInput=document.getElementById('roomInput');
-const checkinInput=document.getElementById('checkinInput');
-const checkoutInput=document.getElementById('checkoutInput');
-const sourceInput=document.getElementById('sourceInput');
-const priceInput=document.getElementById('priceInput');
-const remarkInput=document.getElementById('remarkInput');
-const modalTitle=document.getElementById('modalTitle');
-const monthPicker=document.getElementById('monthPicker');
+<!-- 3️⃣ dom：DOM cache -->
+<script src="js/dom.js"></script>
 
-/* ===== INIT ===== */
-monthPicker.value=new Date().toISOString().slice(0,7);
-monthPicker.onchange=loadAll;
-loadAll();
+<!-- 4️⃣ data：Supabase 读写 -->
+<script src="js/data.js"></script>
 
-/* ===== LOAD ===== */
-async function loadAll(){
-  ROOMS=(await sb.from('rooms').select('*').order('id')).data||[];
-  BOOKINGS=(await sb.from('booking_view').select('*')).data||[];
-  BOOKINGS.forEach(b=>delete b.__hidden);
-  buildLegend();buildDays();buildSelects();
-  render();renderSummary();
-}
+<!-- 5️⃣ calendar：calendar render -->
+<script src="js/calendar.js"></script>
 
-/* ===== LEGEND ===== */
-function buildLegend(){
-  legend.innerHTML='';
-  const all=document.createElement('div');
-  all.className='legend-item active';
-  all.textContent='All';
-  all.onclick=()=>{
-    FILTER.clear();
-    BOOKINGS.forEach(b=>delete b.__hidden);
-    render();
-  };
-  legend.appendChild(all);
+<!-- 6️⃣ summary：summary render -->
+<script src="js/summary.js"></script>
 
-  SOURCES.forEach(s=>{
-    const el=document.createElement('div');
-    el.className='legend-item';
-    el.innerHTML=`<span class="legend-color src-${norm(s)}"></span>${s}`;
-    el.onclick=()=>{
-      FILTER.has(s)?FILTER.delete(s):FILTER.add(s);
-      el.classList.toggle('active');
-      render();
-    };
-    legend.appendChild(el);
-  });
-}
+<!-- 7️⃣ modal：modal / validate -->
+<script src="js/modal.js"></script>
 
-/* ===== SUMMARY ===== */
-function renderSummary(){
-  const [y,m]=monthPicker.value.split('-').map(Number);
-  let byRoom={},bySource={};
-
-  BOOKINGS.forEach(b=>{
-    const d=new Date(b.check_in);
-    if(d.getFullYear()!==y||d.getMonth()+1!==m) return;
-
-    byRoom[b.room]=(byRoom[b.room]||{c:0,s:0});
-    byRoom[b.room].c++;
-    byRoom[b.room].s+=Number(b.price||0);
-
-    bySource[b.source]=(bySource[b.source]||{c:0,s:0});
-    bySource[b.source].c++;
-    bySource[b.source].s+=Number(b.price||0);
-  });
-
-  summary.innerHTML='<div class="summary-title">By Room</div>';
-  Object.keys(byRoom).forEach(r=>{
-    summary.innerHTML+=`
-      <div class="summary-row" onclick="filterByRoom('${r}')">
-        <div>${r} (${byRoom[r].c})</div>
-        <div>RM ${byRoom[r].s}</div>
-      </div>`;
-  });
-
-  summary.innerHTML+='<div class="summary-title">By Source</div>';
-  Object.keys(bySource).forEach(s=>{
-    summary.innerHTML+=`
-      <div class="summary-row" onclick="filterBySource('${s}')">
-        <div>${s} (${bySource[s].c})</div>
-        <div>RM ${bySource[s].s}</div>
-      </div>`;
-  });
-}
-
-/* ===== FILTER ===== */
-function filterByRoom(room){
-  FILTER.clear();
-  BOOKINGS.forEach(b=>b.__hidden = b.room !== room);
-  render();
-}
-function filterBySource(src){
-  FILTER.clear();
-  FILTER.add(src);
-  render();
-}
-
-/* ===== CALENDAR ===== */
-function buildSelects(){
-  roomInput.innerHTML='';
-  ROOMS.forEach(r=>roomInput.innerHTML+=`<option value="${r.id}">${r.name}</option>`);
-  sourceInput.innerHTML='';
-  SOURCES.forEach(s=>sourceInput.innerHTML+=`<option>${s}</option>`);
-}
-
-function buildDays(){
-  const [y,m]=monthPicker.value.split('-').map(Number);
-  DAYS=[...Array(new Date(y,m,0).getDate())]
-    .map((_,i)=>`${y}-${String(m).padStart(2,'0')}-${String(i+1).padStart(2,'0')}`);
-}
-
-function render(){
-  let html='';
-  const cols=`88px repeat(${DAYS.length},56px)`;
-
-  html+=`<div class="header" style="grid-template-columns:${cols}">
-    <div class="room corner">
-      <span class="corner-date">Date</span>
-      <span class="corner-room">Room</span>
-    </div>`;
-  DAYS.forEach(d=>html+=`<div class="cell">${d.slice(8)}</div>`);
-  html+=`</div>`;
-
-  ROOMS.forEach(r=>{
-    html+=`<div class="row" style="grid-template-columns:${cols}">
-      <div class="room">${r.name}</div>`;
-    let i=0;
-    while(i<DAYS.length){
-      const d=DAYS[i];
-      const b=BOOKINGS.find(x=>
-        !x.__hidden &&
-        x.room===r.name &&
-        d>=x.check_in && d<x.check_out &&
-        (FILTER.size===0||FILTER.has(x.source))
-      );
-      if(!b){
-        html+=`<div class="cell" data-room="${r.name}" data-date="${d}"
-          onclick="onCellClick(this)"></div>`;
-        i++;continue;
-      }
-      const span=(new Date(b.check_out)-new Date(d))/86400000;
-      html+=`<div class="bar src-${norm(b.source)}"
-        style="grid-column:span ${span}"
-        onclick="openEdit(${b.id})">${b.price||''}</div>`;
-      i+=span;
-    }
-    html+=`</div>`;
-  });
-  app.innerHTML=html;
-}
-
-/* ===== CLICK ===== */
-function onCellClick(el){
-  const room=el.dataset.room;
-  const date=el.dataset.date;
-  document.querySelectorAll('.cell.selecting').forEach(c=>c.classList.remove('selecting'));
-
-  if(!selectState||selectState.room!==room||date<=selectState.checkin){
-    selectState={room,checkin:date};
-    el.classList.add('selecting');return;
-  }
-  openNew(room,selectState.checkin,date);
-  selectState=null;
-}
-
-/* ===== MODAL ===== */
-function openNew(room,ci,co){
-  modalTitle.textContent='New Booking';
-  editing=null;
-  roomInput.value=ROOMS.find(r=>r.name===room).id;
-  checkinInput.value=ci;
-  checkoutInput.value=co;
-  priceInput.value='';
-  remarkInput.value='';
-  saveBtn.disabled=true;
-  deleteBtn.style.display='none';
-  modal.style.display='block';
-}
-
-function openEdit(id){
-  editing=BOOKINGS.find(b=>b.id===id);
-  modalTitle.textContent='Edit Booking';
-  roomInput.value=editing.room_id;
-  checkinInput.value=editing.check_in;
-  checkoutInput.value=editing.check_out;
-  sourceInput.value=editing.source;
-  priceInput.value=editing.price||'';
-  remarkInput.value=editing.remark||'';
-  deleteBtn.style.display='block';
-  validate();
-  modal.style.display='block';
-}
-
-function closeModal(){modal.style.display='none'}
-
-function validate(){
-  saveBtn.disabled = !(checkoutInput.value>checkinInput.value && Number(priceInput.value)>0);
-}
-checkoutInput.onchange=validate;
-priceInput.oninput=validate;
-
-/* ===== SAVE / DELETE ===== */
-saveBtn.onclick=async()=>{
-  if(saveBtn.disabled) return;
-  const payload={
-    room_id:+roomInput.value,
-    check_in:checkinInput.value,
-    check_out:checkoutInput.value,
-    source:sourceInput.value,
-    price:Number(priceInput.value),
-    remark:remarkInput.value||null
-  };
-  editing
-    ? await sb.from('bookings').update(payload).eq('id',editing.id)
-    : await sb.from('bookings').insert(payload);
-  closeModal();loadAll();
-};
-
-deleteBtn.onclick=async()=>{
-  await sb.from('bookings').delete().eq('id',editing.id);
-  closeModal();loadAll();
-};
-</script>
+<!-- 8️⃣ main：入口（最后执行） -->
+<script src="js/main.js"></script>
 
 </body>
 </html>
