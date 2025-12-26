@@ -1,6 +1,6 @@
 // js/calendar.js
 
-console.log("done 4")
+console.log("done 5")
 
 /* ===== LEGEND ===== */
 function buildLegend(){
@@ -76,13 +76,15 @@ function render(){
       }
 
       const span = (new Date(b.check_out) - new Date(d)) / 86400000;
-      html += `
+  html += `
   <div class="bar src-${norm(b.source)}"
        style="grid-column:span ${span}"
-       data-id="${b.id}">
+       data-id="${b.id}"
+       onclick="openEdit(${b.id})">
     <span class="bar-price">${formatRM(b.price)}</span>
   </div>
 `;
+
       i += span;
     }
 
@@ -141,56 +143,6 @@ function onCellClick(el, e){
 }
 
 
-let longPressTimer = null;
-let longPressBookingId = null;
-
-function bindLongPress() {
-  document.querySelectorAll('.bar').forEach(bar => {
-
-    /* ===== 普通点击 → Edit ===== */
-    bar.addEventListener('click', e => {
-      e.stopPropagation();
-      openEdit(Number(bar.dataset.id));
-    });
-
-    /* ===== 长按 ===== */
-    bar.addEventListener('touchstart', e => {
-      // 关键：告诉 Safari 这是手势，不是滚动
-      e.preventDefault();
-
-      const id = Number(bar.dataset.id);
-      longPressBookingId = id;
-
-      const t = e.touches[0];
-
-      longPressTimer = setTimeout(() => {
-        openLongPressMenu(t.clientX, t.clientY);
-      }, 500);
-    }, { passive: false }); // ⬅️ 非常重要
-
-    bar.addEventListener('touchend', () => {
-      clearTimeout(longPressTimer);
-    });
-
-    bar.addEventListener('touchmove', () => {
-      clearTimeout(longPressTimer);
-    });
-  });
-}
-
-
-function openLongPressMenu(x, y) {
-  const menu = document.getElementById('longPressMenu');
-  menu.style.left = x + 'px';
-  menu.style.top = y + 'px';
-  menu.style.display = 'block';
-}
-
-function closeLongPressMenu() {
-  document.getElementById('longPressMenu').style.display = 'none';
-  longPressBookingId = null;
-}
-
 document.addEventListener('DOMContentLoaded', () => {
   const dragBtn = document.getElementById('lpDrag');
   if (!dragBtn) {
@@ -206,4 +158,3 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 render();
-bindLongPress();
