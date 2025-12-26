@@ -37,31 +37,6 @@ body{margin:0;font-family:system-ui;background:#fff;color:#111}
 }
 .header .room{background:#f5f5f5;z-index:4}
 
-/* ===== CORNER: Room | Date (final clean) ===== */
-.corner{
-  position: sticky;
-  left: 0;
-  z-index: 5;
-  width: 88px;
-  height: 34px;
-  background: #f5f5f5;
-  color: #777;
-  font-size: 11px;
-
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  padding-left: 12px;
-  gap: 10px;
-}
-
-/* 普通文本，不再做任何花样 */
-.corner-room,
-.corner-date{
-  position: static;
-  white-space: nowrap;
-}
-
 /* ===== CELL ===== */
 .cell{
   height:34px;
