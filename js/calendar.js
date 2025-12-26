@@ -141,7 +141,6 @@ function onCellClick(el, e){
   selectState = null;
 }
 
-let editing = null;
 let DRAG_MODE = false;
 
 document.addEventListener('DOMContentLoaded', () => {
