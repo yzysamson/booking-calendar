@@ -77,7 +77,7 @@ function render(){
       html += `<div class="bar src-${norm(b.source)}"
         style="grid-column:span ${span}"
         onclick="openEdit(${b.id})">
-        ${b.price || ''}
+        <span class="bar-price">${formatRM(b.price)}</span>
       </div>`;
       i += span;
     }

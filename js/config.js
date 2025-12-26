@@ -9,3 +9,11 @@ const SOURCES=[
   'Airbnb','Booking','Agoda','Trip','SLH',
   'Walk-in (Wayne)','Walk-in (Soo)'
 ];
+
+function formatRM(n){
+  const v = Number(n || 0);
+  return 'RM ' + v.toLocaleString('en-MY', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  });
+}

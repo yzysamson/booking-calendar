@@ -236,3 +236,43 @@ html, body {
   min-height: 1px;   /* Safari / iOS 必须 */
 }
 
+/* ===== SUMMARY TYPO ===== */
+#summaryContent {
+  font-size: 12px;          /* 和 .room 一致 */
+}
+
+.summary-title {
+  font-weight: 600;
+  margin: 8px 0 4px;
+}
+
+.summary-row,
+.summary-total {
+  display: flex;
+  justify-content: space-between;
+  padding: 4px 0;
+}
+
+.summary-total {
+  font-weight: 600;
+  border-bottom: 1px solid #eee;
+  margin-bottom: 6px;
+}
+
+/*==================auto font size ======================*/
+.bar {
+  justify-content: center;
+  overflow: hidden;
+}
+
+.bar-price {
+  white-space: nowrap;
+  font-size: 12px;
+}
+
+/* 自动缩小（小 span / mobile） */
+@media (max-width: 768px) {
+  .bar-price {
+    font-size: 10px;
+  }
+}
