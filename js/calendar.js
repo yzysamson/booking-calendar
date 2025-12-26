@@ -1,6 +1,6 @@
 // js/calendar.js
 
-console.log("done 1")
+console.log("done 2")
 
 /* ===== LEGEND ===== */
 function buildLegend(){
