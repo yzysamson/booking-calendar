@@ -57,8 +57,37 @@ body{margin:0;font-family:system-ui;background:#fff;color:#111}
     transparent 50.5%
   );
 }
-.corner-date{position:absolute;top:4px;left:6px}
-.corner-room{position:absolute;bottom:4px;right:6px}
+
+/* ===== CORNER: Room | Date ===== */
+.corner{
+  position: sticky;
+  left: 0;
+  z-index: 5;
+  width: 88px;
+  height: 34px;
+  background: #f5f5f5;
+  color: #777;
+  font-size: 11px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+/* 取消之前的绝对定位 */
+.corner-room,
+.corner-date{
+  position: static;
+}
+
+/* 中间竖线 */
+.corner-room::after{
+  content: "|";
+  margin-left: 6px;
+  color: #bbb;
+}
+
 
 /* ===== CELL ===== */
 .cell{
