@@ -139,3 +139,51 @@ function onCellClick(el, e){
   openNew(room, selectState.checkin, date);
   selectState = null;
 }
+
+
+let longPressTimer = null;
+let longPressBookingId = null;
+
+function bindLongPress() {
+  document.querySelectorAll('.bar').forEach(bar => {
+
+    bar.addEventListener('touchstart', e => {
+      const id = Number(bar.dataset.id);
+      longPressBookingId = id;
+
+      const t = e.touches[0];
+
+      longPressTimer = setTimeout(() => {
+        openLongPressMenu(t.clientX, t.clientY);
+      }, 500);
+    });
+
+    bar.addEventListener('touchend', () => {
+      clearTimeout(longPressTimer);
+    });
+
+    bar.addEventListener('touchmove', () => {
+      clearTimeout(longPressTimer);
+    });
+  });
+}
+
+function openLongPressMenu(x, y) {
+  const menu = document.getElementById('longPressMenu');
+  menu.style.left = x + 'px';
+  menu.style.top = y + 'px';
+  menu.style.display = 'block';
+}
+
+function closeLongPressMenu() {
+  document.getElementById('longPressMenu').style.display = 'none';
+  longPressBookingId = null;
+}
+
+document.getElementById('lpDrag').onclick = () => {
+  alert('Drag clicked for booking ID: ' + longPressBookingId);
+  closeLongPressMenu();
+};
+
+render();
+bindLongPress();
