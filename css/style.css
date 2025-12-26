@@ -37,28 +37,7 @@ body{margin:0;font-family:system-ui;background:#fff;color:#111}
 }
 .header .room{background:#f5f5f5;z-index:4}
 
-/* ===== CORNER ===== */
-.corner{
-  position:relative;
-  width:88px;
-  height:34px;
-  background:#f5f5f5;
-  color:#777;
-  font-size:10px;
-}
-.corner::before{
-  content:"";
-  position:absolute;
-  inset:0;
-  background:linear-gradient(
-    45deg,
-    transparent 49.5%,
-    #d0d0d0 50%,
-    transparent 50.5%
-  );
-}
-
-/* ===== CORNER: Room   Date ===== */
+/* ===== CORNER: Room | Date (final clean) ===== */
 .corner{
   position: sticky;
   left: 0;
@@ -71,20 +50,16 @@ body{margin:0;font-family:system-ui;background:#fff;color:#111}
 
   display: flex;
   align-items: center;
-  justify-content: flex-start; /* 靠左 */
-  padding-left: 10px;          /* 整体右移一点 */
-  gap: 12px;                   /* Room 和 Date 的间距 */
+  justify-content: flex-start;
+  padding-left: 12px;
+  gap: 10px;
 }
 
-/* 取消之前所有装饰 */
-.corner-room::after{
-  content: none;
-}
-
-/* 确保不是 absolute */
+/* 普通文本，不再做任何花样 */
 .corner-room,
 .corner-date{
   position: static;
+  white-space: nowrap;
 }
 
 /* ===== CELL ===== */
