@@ -50,29 +50,30 @@ const grabOffsetPx = e.clientX - barRect.left;
 const grabDayOffset = Math.floor(grabOffsetPx / DAY_WIDTH);
 
 function startDrag(e, booking){
-  
-  const barEl = e.target.closest('.bar');
-  
-  if (!barEl) return;
+  // 🔒 保证 e 是事件
+  if (!e || !booking) return;
+
+  // ✅ 稳定拿到 bar DOM（不依赖 e.target）
+  const barEl = document.querySelector(
+    `.bar[data-booking-id="${booking.id}"]`
+  );
+  if (!barEl) return;   // ✅ 现在合法了（在 function 内）
 
   const barRect = barEl.getBoundingClientRect();
+
+  // ⭐ 横向永远以 check-in cell 左边为基准
   const baseX = barRect.left;
 
-  // ① 先算所有需要的值（不要提前用）
-  const grabOffsetPx = e.clientX - barRect.left;
-  const grabDayOffset = Math.floor(grabOffsetPx / DAY_WIDTH);
+  dragState = {
+    booking,
+    baseX,
+    startY: e.clientY,
+    dayShift: 0,
+    roomShift: 0
+  };
 
- dragState = {
-  booking,
-  baseX,              // ⭐ 横向锚点
-  startY: e.clientY,  // 纵向仍然用 pointer
-  dayShift: 0,
-  roomShift: 0
-};
-;
-
-
-  createGhost(e, booking);
+  createGhost(booking);
+  updateGhostPosition();
 
   document.addEventListener('pointermove', onPointerMove);
   document.addEventListener('pointerup', onPointerUp);
@@ -229,7 +230,7 @@ async function syncBooking(b){
 // =====================
 // GHOST BAR
 // =====================
-function createGhost(e, booking){
+function createGhost(booking){
   ghostEl = document.createElement('div');
   ghostEl.className = 'bar';
   ghostEl.style.position = 'fixed';
@@ -239,7 +240,6 @@ function createGhost(e, booking){
   ghostEl.textContent = formatRM(booking.price);
 
   document.body.appendChild(ghostEl);
-  updateGhostPosition(e);
 }
 
 function updateGhostPosition(){
