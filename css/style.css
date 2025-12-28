@@ -66,9 +66,6 @@ body{margin:0;font-family:system-ui;background:#fff;color:#111}
   -webkit-touch-callout: none;
 }
 
-/* ❌ 不要再写 .bar * */
-
-
 
 /* ===== COLORS ===== */
 .src-airbnb{background:#ff385c}
