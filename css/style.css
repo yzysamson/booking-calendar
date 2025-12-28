@@ -407,19 +407,15 @@ html, body {
   background: rgba(220, 0, 0, 0.75) !important;
 }
 
-.drag-preview {
+.drop-indicator {
   position: fixed;
-  z-index: 10000;
-  background: #111;
-  color: #fff;
-  font-size: 11px;
-  padding: 6px 8px;
-  border-radius: 6px;
+  z-index: 9998;
   pointer-events: none;
-  box-shadow: 0 6px 16px rgba(0,0,0,.25);
-  white-space: nowrap;
+  border: 2px solid #2ecc71;   /* 绿色 = 可放 */
+  border-radius: 4px;
+  box-sizing: border-box;
 }
 
-.drag-preview.invalid {
-  background: #c00;
+.drop-indicator.invalid {
+  border-color: #e74c3c;       /* 红色 = 不可放 */
 }

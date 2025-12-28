@@ -6,7 +6,8 @@
 let dragState = null;
 let longPressTimer = null;
 let ghostEl = null;
-let previewEl = null;
+let dropIndicatorEl = null;
+
 
 
 const DAY_WIDTH = 56;   // 与 calendar grid 保持一致
@@ -65,8 +66,8 @@ function startDrag(e, booking){
   document.addEventListener('pointermove', onPointerMove);
   document.addEventListener('pointerup', onPointerUp);
 
-  createPreview();
-  updatePreview();
+  createDropIndicator();
+updateDropIndicator();
 
 }
 
@@ -105,7 +106,7 @@ if (isCrossMonth(baseDate, previewCheckIn, previewCheckOut)){
 } else {
   ghostEl.classList.remove('ghost-invalid');
 }
-updatePreview();
+updateDropIndicator();
 
 }
 
@@ -258,6 +259,9 @@ function cleanup(){
   document.removeEventListener('pointermove', onPointerMove);
   document.removeEventListener('pointerup', onPointerUp);
   dragState = null;
+
+  cleanupDropIndicator();
+
 }
 
 function toISODate(d){
@@ -280,19 +284,28 @@ function isCrossMonth(baseDate, newCheckIn, newCheckOut){
   );
 }
 
-function createPreview(){
-  previewEl = document.createElement('div');
-  previewEl.className = 'drag-preview';
-  document.body.appendChild(previewEl);
+function createDropIndicator(){
+  dropIndicatorEl = document.createElement('div');
+  dropIndicatorEl.className = 'drop-indicator';
+  document.body.appendChild(dropIndicatorEl);
 }
 
-function updatePreview(){
-  if (!previewEl || !dragState) return;
+function updateDropIndicator(){
+  if (!dropIndicatorEl || !dragState) return;
 
   const { booking, dayShift, roomShift } = dragState;
   const dayMs = 86400000;
 
-  // 计算目标日期
+  // 目标房间
+  const roomIndex = ROOMS.findIndex(r => r.name === booking.room);
+  const targetRoom = ROOMS[roomIndex + roomShift];
+
+  if (!targetRoom){
+    dropIndicatorEl.style.display = 'none';
+    return;
+  }
+
+  // 目标日期
   const newCheckIn = new Date(
     new Date(booking.check_in).getTime() + dayShift * dayMs
   );
@@ -300,19 +313,11 @@ function updatePreview(){
     new Date(booking.check_out).getTime() + dayShift * dayMs
   );
 
-  // 计算目标房间
-  const roomIndex = ROOMS.findIndex(r => r.name === booking.room);
-  const targetRoom = ROOMS[roomIndex + roomShift];
+  // booking 长度（天）
+  const spanDays =
+    (new Date(booking.check_out) - new Date(booking.check_in)) / dayMs;
 
-  // 越界
-  if (!targetRoom){
-    previewEl.style.display = 'none';
-    return;
-  }
-
-  previewEl.style.display = 'block';
-
-  // 校验
+  // === 合法性判断 ===
   const crossMonth = isCrossMonth(
     new Date(booking.check_in),
     newCheckIn,
@@ -328,18 +333,27 @@ function updatePreview(){
 
   const valid = !crossMonth && !conflict;
 
-  // 内容
-  previewEl.innerHTML = `
-    <div><strong>${targetRoom.name}</strong></div>
-    <div>${toISODate(newCheckIn)} → ${toISODate(newCheckOut)}</div>
-  `;
+  // === 定位（与 ghost 同一套坐标系）===
+  dropIndicatorEl.style.display = 'block';
 
-  previewEl.classList.toggle('invalid', !valid);
+  dropIndicatorEl.style.left =
+    dragState.baseX + dragState.dayShift * DAY_WIDTH + 'px';
 
-  // 位置（贴着 ghost）
-  previewEl.style.left =
-    dragState.baseX + dragState.dayShift * DAY_WIDTH + 6 + 'px';
+  dropIndicatorEl.style.top =
+    dragState.startY + dragState.roomShift * ROW_HEIGHT + 'px';
 
-  previewEl.style.top =
-    dragState.startY + dragState.roomShift * ROW_HEIGHT - 40 + 'px';
+  dropIndicatorEl.style.width =
+    spanDays * DAY_WIDTH + 'px';
+
+  dropIndicatorEl.style.height =
+    ROW_HEIGHT + 'px';
+
+  dropIndicatorEl.classList.toggle('invalid', !valid);
+}
+
+function cleanupDropIndicator(){
+  if (dropIndicatorEl){
+    dropIndicatorEl.remove();
+    dropIndicatorEl = null;
+  }
 }
