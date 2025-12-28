@@ -109,10 +109,9 @@ async function onPointerUp(){
 function applyDragResult(){
   const { booking, dayShift, roomShift, grabDayOffset } = dragState;
 
-// ⭐ 关键修正：以第一个 cell 为基准
-const effectiveDayShift = dayShift - grabDayOffset;
-  if (!effectiveDayShift && !roomShift) return false;
+  if (!dayShift && !roomShift) return false;
 
+  // ===== 房间计算 =====
   const roomIndex = ROOMS.findIndex(r => r.name === booking.room);
   const newRoomIndex = roomIndex + roomShift;
 
@@ -120,43 +119,49 @@ const effectiveDayShift = dayShift - grabDayOffset;
     return false;
   }
 
+  // ===== 日期计算（全部先算完）=====
   const dayMs = 86400000;
+  const effectiveDayShift = dayShift - grabDayOffset;
 
-  // ❌ 禁止跨月 drag
-const baseDate = new Date(booking.check_in);
+  const newCheckIn = new Date(
+    new Date(booking.check_in).getTime() + effectiveDayShift * dayMs
+  );
 
-if (
-  !isSameMonth(newCheckIn, baseDate) ||
-  !isSameMonth(newCheckOut, baseDate)
-){
-  alert('❌ Cannot drag booking across months');
-  return false;
-}
+  const newCheckOut = new Date(
+    new Date(booking.check_out).getTime() + effectiveDayShift * dayMs
+  );
 
-  const newCheckIn = new Date(new Date(booking.check_in).getTime() + effectiveDayShift * dayMs);
-  const newCheckOut = new Date(new Date(booking.check_out).getTime() + effectiveDayShift * dayMs);
+  // ===== 当月限制（现在用，已初始化）=====
+  const baseDate = new Date(booking.check_in);
 
+  if (
+    !isSameMonth(newCheckIn, baseDate) ||
+    !isSameMonth(newCheckOut, baseDate)
+  ){
+    alert('❌ Cannot drag booking across months');
+    return false;
+  }
+
+  // ===== 冲突检测 =====
   const newRoom = ROOMS[newRoomIndex];
 
-const newBooking = {
-  ...booking,
-  room_id: newRoom.id,          // ✅ 用 room_id
-  room: newRoom.name,           // UI 用（不进 DB）
-  check_in: toISODate(newCheckIn),
-  check_out: toISODate(newCheckOut)
-};
+  const testBooking = {
+    ...booking,
+    room_id: newRoom.id,
+    room: newRoom.name,
+    check_in: toISODate(newCheckIn),
+    check_out: toISODate(newCheckOut)
+  };
 
-
-  // 2️⃣ 冲突检测
-  if (hasConflict(newBooking)){
+  if (hasConflict(testBooking)){
     alert('❌ Booking conflict detected');
     return false;
   }
 
-  // 3️⃣ 本地更新
-  Object.assign(booking, newBooking);
+  // ===== 本地更新 =====
+  Object.assign(booking, testBooking);
 
-  // 3️⃣ Supabase sync（非阻塞）
+  // ===== Supabase 同步（异步，不阻塞 UI）=====
   syncBooking(booking);
 
   return true;
