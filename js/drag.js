@@ -121,6 +121,18 @@ const effectiveDayShift = dayShift - grabDayOffset;
   }
 
   const dayMs = 86400000;
+
+  // ❌ 禁止跨月 drag
+const baseDate = new Date(booking.check_in);
+
+if (
+  !isSameMonth(newCheckIn, baseDate) ||
+  !isSameMonth(newCheckOut, baseDate)
+){
+  alert('❌ Cannot drag booking across months');
+  return false;
+}
+
   const newCheckIn = new Date(new Date(booking.check_in).getTime() + effectiveDayShift * dayMs);
   const newCheckOut = new Date(new Date(booking.check_out).getTime() + effectiveDayShift * dayMs);
 
@@ -221,4 +233,11 @@ function cleanup(){
 
 function toISODate(d){
   return d.toISOString().slice(0, 10);
+}
+
+function isSameMonth(d1, d2){
+  return (
+    d1.getFullYear() === d2.getFullYear() &&
+    d1.getMonth() === d2.getMonth()
+  );
 }
