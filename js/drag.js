@@ -103,8 +103,9 @@ function applyDragResult(){
   const newBooking = {
     ...booking,
     room: ROOMS[newRoomIndex].name,
-    check_in: formatDate(newCheckIn),
-    check_out: formatDate(newCheckOut)
+    check_in: toISODate(newCheckIn),
+check_out: toISODate(newCheckOut)
+
   };
 
   // 2️⃣ 冲突检测
@@ -189,4 +190,8 @@ function cleanup(){
   document.removeEventListener('pointermove', onPointerMove);
   document.removeEventListener('pointerup', onPointerUp);
   dragState = null;
+}
+
+function toISODate(d){
+  return d.toISOString().slice(0, 10);
 }
