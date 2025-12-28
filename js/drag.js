@@ -78,24 +78,35 @@ function startDrag(e, booking){
 function onPointerMove(e){
   if (!dragState) return;
 
-  // ⭐⭐ 必须每一帧都阻止
+  // ⭐ iOS Safari 必须
   e.preventDefault();
 
   const dx = e.clientX - dragState.startX;
   const dy = e.clientY - dragState.startY;
 
-  dragState.dayShift = Math.round(dx / DAY_WIDTH);
-  dragState.roomShift = Math.round(dy / ROW_HEIGHT);
+  // ✅ 用 floor / ceil，避免来回跳
+  dragState.dayShift =
+    dx > 0
+      ? Math.floor(dx / DAY_WIDTH)
+      : Math.ceil(dx / DAY_WIDTH);
+
+  dragState.roomShift =
+    dy > 0
+      ? Math.floor(dy / ROW_HEIGHT)
+      : Math.ceil(dy / ROW_HEIGHT);
 
   updateDropIndicator();
 }
 
-
 // =====================
 // DROP
 // =====================
-async function onPointerUp(){
+async function onPointerUp(e){
   if (!dragState) return;
+
+  // ⭐ 吃掉后续 click（关键）
+  e?.preventDefault();
+  e?.stopPropagation();
 
   const ok = applyDragResult();
 
@@ -284,7 +295,7 @@ function isCrossMonth(baseDate, newCheckIn, newCheckOut){
 function createDropIndicator(){
   dropIndicatorEl = document.createElement('div');
   dropIndicatorEl.className = 'drop-indicator';
-  document.body.appendChild(dropIndicatorEl);
+  document.getElementById('app').appendChild(dropIndicatorEl);
 }
 
 function updateDropIndicator(){
@@ -293,11 +304,14 @@ function updateDropIndicator(){
   const { booking, dayShift, roomShift } = dragState;
   const dayMs = 86400000;
 
-  // ===== 目标 room =====
+  const appEl = document.getElementById('app');
+  const appRect = appEl.getBoundingClientRect();
+
+  // ===== 房间 index =====
   const baseRoomIndex = ROOMS.findIndex(r => r.name === booking.room);
   const targetRoomIndex = baseRoomIndex + roomShift;
-  const rows = document.querySelectorAll('#app .row');
 
+  const rows = appEl.querySelectorAll('.row');
   if (targetRoomIndex < 0 || targetRoomIndex >= rows.length){
     dropIndicatorEl.style.display = 'none';
     return;
@@ -306,17 +320,16 @@ function updateDropIndicator(){
   const targetRowEl = rows[targetRoomIndex];
   const rowRect = targetRowEl.getBoundingClientRect();
 
-  // ===== booking 起始 day index =====
+  // ===== 日期 index =====
   const baseDayIndex = DAYS.indexOf(booking.check_in);
   const targetDayIndex = baseDayIndex + dayShift;
 
-  if (targetDayIndex < 0 || targetDayIndex >= DAYS.length){
+  const headerCells = appEl.querySelectorAll('.header .cell');
+  if (targetDayIndex < 0 || targetDayIndex >= headerCells.length){
     dropIndicatorEl.style.display = 'none';
     return;
   }
 
-  // header 里的 day cell（第 targetDayIndex 个）
-  const headerCells = document.querySelectorAll('#app .header .cell');
   const targetDayCell = headerCells[targetDayIndex];
   const dayRect = targetDayCell.getBoundingClientRect();
 
@@ -324,7 +337,7 @@ function updateDropIndicator(){
   const spanDays =
     (new Date(booking.check_out) - new Date(booking.check_in)) / dayMs;
 
-  // ===== 合法性 =====
+  // ===== 合法性判断 =====
   const newCheckIn = new Date(
     new Date(booking.check_in).getTime() + dayShift * dayMs
   );
@@ -347,17 +360,24 @@ function updateDropIndicator(){
 
   const valid = !crossMonth && !conflict;
 
-  // ===== 精准定位（核心）=====
+  // ===== ⭐ 精准对齐到 grid（关键）=====
   dropIndicatorEl.style.display = 'block';
-  dropIndicatorEl.style.left = dayRect.left + 'px';
-  dropIndicatorEl.style.top = rowRect.top + 'px';
-  dropIndicatorEl.style.width = spanDays * DAY_WIDTH + 'px';
-  dropIndicatorEl.style.height = ROW_HEIGHT + 'px';
+
+  dropIndicatorEl.style.left =
+    (dayRect.left - appRect.left) + 'px';
+
+  dropIndicatorEl.style.top =
+    (rowRect.top - appRect.top) + 'px';
+
+  dropIndicatorEl.style.width =
+    spanDays * DAY_WIDTH + 'px';
+
+  dropIndicatorEl.style.height =
+    ROW_HEIGHT + 'px';
 
   dropIndicatorEl.classList.toggle('invalid', !valid);
 
+  // ===== indicator = 唯一真相 =====
   dragState.targetDayIndex = targetDayIndex;
-dragState.targetRoomIndex = targetRoomIndex;
-
+  dragState.targetRoomIndex = targetRoomIndex;
 }
-

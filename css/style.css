@@ -408,9 +408,9 @@ html, body {
 }
 
 .drop-indicator {
-  position: fixed;
-  z-index: 9998;
+  position: absolute;
   pointer-events: none;
+  z-index: 20;
   border: 2px solid #2ecc71;   /* 绿色 = 可放 */
   border-radius: 4px;
   box-sizing: border-box;
