@@ -15,6 +15,18 @@ const DAY_WIDTH = 56;   // 与 calendar grid 保持一致
 const ROW_HEIGHT = 34;
 const LONG_PRESS_MS = 300;
 
+
+function lockScroll(){
+  document.body.style.overflow = 'hidden';
+  document.body.style.touchAction = 'none';
+}
+
+function unlockScroll(){
+  document.body.style.overflow = '';
+  document.body.style.touchAction = '';
+}
+
+
 // =====================
 // ENTRY
 // =====================
@@ -39,6 +51,8 @@ function cancelLongPress(){
 
 function startDrag(e, booking){
   if (!e || !booking) return;
+
+  lockScroll(); 
 
   dragState = {
     booking,
@@ -198,7 +212,8 @@ function cleanup(){
   dragState = null;
 
   cleanupDropIndicator();
-
+  unlockScroll();
+  
   // ⭐ 延迟清掉，确保 click 事件已经被挡掉
   setTimeout(() => {
     didDrag = false;
