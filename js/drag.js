@@ -88,6 +88,28 @@ function onPointerMove(e){
   dragState.roomShift = Math.round(dy / ROW_HEIGHT);
 
   updateGhostPosition();
+
+  // ===== ghost 月边界提示 =====
+const dayMs = 86400000;
+
+const previewCheckIn = new Date(
+  new Date(dragState.booking.check_in).getTime() +
+  dragState.dayShift * dayMs
+);
+
+const previewCheckOut = new Date(
+  new Date(dragState.booking.check_out).getTime() +
+  dragState.dayShift * dayMs
+);
+
+const baseDate = new Date(dragState.booking.check_in);
+
+if (isCrossMonth(baseDate, previewCheckIn, previewCheckOut)){
+  ghostEl.classList.add('ghost-invalid');
+} else {
+  ghostEl.classList.remove('ghost-invalid');
+}
+
 }
 
 // =====================
@@ -219,8 +241,11 @@ function createGhost(e, booking){
 function updateGhostPosition(){
   if (!ghostEl || !dragState) return;
 
-  ghostEl.style.left = dragState.startX + dragState.effectiveDayShift * DAY_WIDTH + 'px';
-  ghostEl.style.top  = dragState.startY + dragState.roomShift * ROW_HEIGHT + 'px';
+  ghostEl.style.left =
+    dragState.baseX + dragState.dayShift * DAY_WIDTH + 'px';
+
+  ghostEl.style.top =
+    dragState.startY + dragState.roomShift * ROW_HEIGHT + 'px';
 }
 
 function cleanupGhost(){
@@ -247,5 +272,14 @@ function isSameMonth(d1, d2){
   return (
     d1.getFullYear() === d2.getFullYear() &&
     d1.getMonth() === d2.getMonth()
+  );
+}
+
+function isCrossMonth(baseDate, newCheckIn, newCheckOut){
+  return (
+    newCheckIn.getFullYear() !== baseDate.getFullYear() ||
+    newCheckIn.getMonth() !== baseDate.getMonth() ||
+    newCheckOut.getFullYear() !== baseDate.getFullYear() ||
+    newCheckOut.getMonth() !== baseDate.getMonth()
   );
 }

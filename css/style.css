@@ -402,3 +402,7 @@ html, body {
 .summary-sheet.show {
   transform: translateY(0);
 }
+
+.ghost-invalid {
+  background: rgba(220, 0, 0, 0.75) !important;
+}
