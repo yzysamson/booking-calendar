@@ -33,21 +33,6 @@ function cancelLongPress(){
   longPressTimer = null;
 }
 
-// =====================
-// DRAG START
-// =====================
-
-const barEl = document.querySelector(
-  `.bar[data-booking-id="${booking.id}"]`
-);
-if (!barEl) return;
-const barRect = barEl.getBoundingClientRect();
-
-// 你按下的位置，距离 bar 左边多少 px
-const grabOffsetPx = e.clientX - barRect.left;
-
-// 转成“第几个 day”
-const grabDayOffset = Math.floor(grabOffsetPx / DAY_WIDTH);
 
 function startDrag(e, booking){
   // 🔒 保证 e 是事件
