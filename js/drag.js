@@ -3,6 +3,7 @@
 // Programmatic Drag & Drop (Ghost + Conflict + Sync)
 // ===================================================
 
+let didDrag = false;
 let dragState = null;
 let longPressTimer = null;
 let dropIndicatorEl = null;
@@ -63,6 +64,10 @@ function onPointerMove(e){
 
   const dx = e.clientX - dragState.startX;
   const dy = e.clientY - dragState.startY;
+
+  if (Math.abs(dx) > 3 || Math.abs(dy) > 3){
+    didDrag = true;   // ⭐ 关键
+  }
 
   dragState.dayShift = Math.round(dx / DAY_WIDTH);
   dragState.roomShift = Math.round(dy / ROW_HEIGHT);
@@ -193,7 +198,13 @@ function cleanup(){
   dragState = null;
 
   cleanupDropIndicator();
+
+  // ⭐ 延迟清掉，确保 click 事件已经被挡掉
+  setTimeout(() => {
+    didDrag = false;
+  }, 0);
 }
+
 
 function cleanupDropIndicator(){
   if (dropIndicatorEl){

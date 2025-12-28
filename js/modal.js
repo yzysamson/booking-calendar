@@ -13,6 +13,7 @@ function openNew(room,ci,co){
 }
 
 function openEdit(id){
+  if (didDrag) return;
   editing=BOOKINGS.find(b=>b.id===id);
   modalTitle.textContent='Edit Booking';
   roomInput.value=editing.room_id;
