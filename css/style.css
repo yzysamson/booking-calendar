@@ -444,3 +444,28 @@ html, body {
   user-select: none;
 }
 
+/* ===== Disable text selection globally (iOS fix) ===== */
+html, body, .page {
+  -webkit-user-select: none;
+  user-select: none;
+
+  -webkit-touch-callout: none; /* 禁止 iOS copy 菜单 */
+}
+
+/* ===== Allow selection inside modal inputs ===== */
+.modal input,
+.modal textarea {
+  -webkit-user-select: text;
+  user-select: text;
+
+  -webkit-touch-callout: default;
+}
+
+label,
+.legend,
+.topbar,
+#app,
+.summary-sheet {
+  -webkit-user-select: none;
+  user-select: none;
+}
