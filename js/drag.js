@@ -47,6 +47,16 @@ const grabOffsetPx = e.clientX - barRect.left;
 const grabDayOffset = Math.floor(grabOffsetPx / DAY_WIDTH);
 
 function startDrag(e, booking){
+  const barEl = e.target.closest('.bar');
+  if (!barEl) return;
+
+  const barRect = barEl.getBoundingClientRect();
+
+  // ① 先算所有需要的值（不要提前用）
+  const grabOffsetPx = e.clientX - barRect.left;
+  const grabDayOffset = Math.floor(grabOffsetPx / DAY_WIDTH);
+
+  // ② 再初始化 dragState（一次性）
   dragState = {
     booking,
     startX: e.clientX,
