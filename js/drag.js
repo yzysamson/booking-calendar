@@ -10,8 +10,6 @@ let dropIndicatorEl = null;
 const ROOM_COL_WIDTH = 88;   // 和 CSS 的 .room width 一致
 const HEADER_HEIGHT = 34;   // header 那一行的高度
 
-console.log(document.querySelector('.header').getBoundingClientRect().height)
-
 
 const DAY_WIDTH = 56;   // 与 calendar grid 保持一致
 const ROW_HEIGHT = 34;
@@ -245,8 +243,15 @@ function cleanup(){
   dragState = null;
 
   cleanupDropIndicator();
-
 }
+
+function cleanupDropIndicator(){
+  if (dropIndicatorEl){
+    dropIndicatorEl.remove();
+    dropIndicatorEl = null;
+  }
+}
+
 
 function toISODate(d){
   return d.toISOString().slice(0, 10);
