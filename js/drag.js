@@ -367,11 +367,14 @@ function updateDropIndicator(){
   // ===== ⭐ 精准对齐到 grid（关键）=====
   dropIndicatorEl.style.display = 'block';
 
- dropIndicatorEl.style.left =
-  targetDayCell.offsetLeft + 'px';
+  const scrollEl = document.querySelector('.content');
+
+dropIndicatorEl.style.left =
+  (targetDayCell.offsetLeft - scrollEl.scrollLeft) + 'px';
 
 dropIndicatorEl.style.top =
-  targetRowEl.offsetTop + 'px';
+  (targetRowEl.offsetTop - scrollEl.scrollTop) + 'px';
+
 
   dropIndicatorEl.style.width =
     spanDays * DAY_WIDTH + 'px';
