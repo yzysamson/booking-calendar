@@ -419,3 +419,20 @@ html, body {
 .drop-indicator.invalid {
   border-color: #e74c3c;       /* 红色 = 不可放 */
 }
+
+.drop-indicator.success {
+  border-color: #2ecc71;
+  animation: drop-success 180ms ease-out;
+}
+
+@keyframes drop-success {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(0.96);
+    opacity: 0;
+  }
+}
+

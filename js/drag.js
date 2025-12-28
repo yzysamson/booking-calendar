@@ -7,7 +7,10 @@ let dragState = null;
 let longPressTimer = null;
 let ghostEl = null;
 let dropIndicatorEl = null;
+const ROOM_COL_WIDTH = 88;   // 和 CSS 的 .room width 一致
+const HEADER_HEIGHT = 34;   // header 那一行的高度
 
+console.log(document.querySelector('.header').getBoundingClientRect().height)
 
 
 const DAY_WIDTH = 56;   // 与 calendar grid 保持一致
@@ -90,15 +93,23 @@ function onPointerMove(e){
 async function onPointerUp(){
   if (!dragState) return;
 
-  cleanupGhost();
-
   const ok = applyDragResult();
-  cleanup();
 
-  if (ok){
-    render(); // 用你原本的 render
+  if (ok && dropIndicatorEl){
+    dropIndicatorEl.classList.add('success');
+
+    // 等动画跑完再 cleanup
+    setTimeout(() => {
+      cleanupGhost();
+      cleanup();
+      render();
+    }, 180);
+  } else {
+    cleanupGhost();
+    cleanup();
   }
 }
+
 
 // =====================
 // APPLY RESULT
@@ -119,13 +130,13 @@ function applyDragResult(){
   // ===== 日期计算（全部先算完）=====
   const dayMs = 86400000;
 
-  const newCheckIn = new Date(
-    new Date(booking.check_in).getTime()
-  );
+ const newCheckIn = new Date(
+  new Date(booking.check_in).getTime() + dayShift * dayMs
+);
 
-  const newCheckOut = new Date(
-    new Date(booking.check_out).getTime()
-  );
+const newCheckOut = new Date(
+  new Date(booking.check_out).getTime() + dayShift * dayMs
+);
 
   // ===== 当月限制（现在用，已初始化）=====
   const baseDate = new Date(booking.check_in);
@@ -309,11 +320,38 @@ function updateDropIndicator(){
   // === 定位（与 ghost 同一套坐标系）===
   dropIndicatorEl.style.display = 'block';
 
-  dropIndicatorEl.style.left =
-  dragState.startX + dragState.dayShift * DAY_WIDTH + 'px';
+  const calendarRect = document
+  .getElementById('app')
+  .getBoundingClientRect();
 
+// 当前 booking 的起始 day index（在当前 month）
+const baseDayIndex =
+  DAYS.indexOf(dragState.booking.check_in);
+
+// 目标 day index
+const targetDayIndex = baseDayIndex + dayShift;
+
+// 当前 booking 的 room index
+const baseRoomIndex =
+  ROOMS.findIndex(r => r.name === booking.room);
+
+// 目标 room index
+const targetRoomIndex = baseRoomIndex + roomShift;
+
+// === X 对齐到日期 cell ===
+dropIndicatorEl.style.left =
+  calendarRect.left +
+  ROOM_COL_WIDTH +
+  targetDayIndex * DAY_WIDTH +
+  'px';
+
+// === Y 对齐到房间 row ===
 dropIndicatorEl.style.top =
-  dragState.startY + dragState.roomShift * ROW_HEIGHT + 'px';
+  calendarRect.top +
+  HEADER_HEIGHT +
+  targetRoomIndex * ROW_HEIGHT +
+  'px';
+
 
   dropIndicatorEl.style.width =
     spanDays * DAY_WIDTH + 'px';
