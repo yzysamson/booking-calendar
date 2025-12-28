@@ -438,6 +438,9 @@ html, body {
 
 /* ===== iOS Safari drag fix ===== */
 .bar {
-  touch-action: none;          /* ⭐ 关键 */
+  touch-action: none;              /* 禁止浏览器手势 */
   -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
 }
+

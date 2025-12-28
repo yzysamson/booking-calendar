@@ -34,8 +34,10 @@ function onBarPointerDown(e, bookingId){
   const booking = BOOKINGS.find(b => b.id === bookingId);
   if (!booking) return;
 
-  // 防止误触点击
   e.preventDefault();
+
+  // ⭐⭐ 关键：告诉 Safari「这个手指是我的」
+  e.target.setPointerCapture(e.pointerId);
 
   longPressTimer = setTimeout(() => {
     startDrag(e, booking);
@@ -76,18 +78,18 @@ function startDrag(e, booking){
 function onPointerMove(e){
   if (!dragState) return;
 
+  // ⭐⭐ 必须每一帧都阻止
+  e.preventDefault();
+
   const dx = e.clientX - dragState.startX;
   const dy = e.clientY - dragState.startY;
-
-  if (Math.abs(dx) > 3 || Math.abs(dy) > 3){
-    didDrag = true;   // ⭐ 关键
-  }
 
   dragState.dayShift = Math.round(dx / DAY_WIDTH);
   dragState.roomShift = Math.round(dy / ROW_HEIGHT);
 
   updateDropIndicator();
 }
+
 
 // =====================
 // DROP
@@ -213,11 +215,18 @@ function cleanup(){
 
   cleanupDropIndicator();
   unlockScroll();
-  
+
   // ⭐ 延迟清掉，确保 click 事件已经被挡掉
   setTimeout(() => {
     didDrag = false;
   }, 0);
+}
+
+document.addEventListener('pointercancel', onPointerCancel);
+
+function onPointerCancel(e){
+  // iOS Safari 在横向滑动时会触发这个
+  cleanup();
 }
 
 
