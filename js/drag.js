@@ -84,16 +84,6 @@ function onPointerMove(e){
   updateDropIndicator();
 }
 
-const baseDate = new Date(dragState.booking.check_in);
-
-if (isCrossMonth(baseDate, previewCheckIn, previewCheckOut)){
-  ghostEl.classList.add('ghost-invalid');
-} else {
-  ghostEl.classList.remove('ghost-invalid');
-}
-updateDropIndicator();
-
-
 // =====================
 // DROP
 // =====================
