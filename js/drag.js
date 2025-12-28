@@ -6,6 +6,8 @@
 let dragState = null;
 let longPressTimer = null;
 let ghostEl = null;
+let previewEl = null;
+
 
 const DAY_WIDTH = 56;   // 与 calendar grid 保持一致
 const ROW_HEIGHT = 34;
@@ -62,6 +64,10 @@ function startDrag(e, booking){
 
   document.addEventListener('pointermove', onPointerMove);
   document.addEventListener('pointerup', onPointerUp);
+
+  createPreview();
+  updatePreview();
+
 }
 
 // =====================
@@ -99,6 +105,7 @@ if (isCrossMonth(baseDate, previewCheckIn, previewCheckOut)){
 } else {
   ghostEl.classList.remove('ghost-invalid');
 }
+updatePreview();
 
 }
 
@@ -271,4 +278,68 @@ function isCrossMonth(baseDate, newCheckIn, newCheckOut){
     newCheckOut.getFullYear() !== baseDate.getFullYear() ||
     newCheckOut.getMonth() !== baseDate.getMonth()
   );
+}
+
+function createPreview(){
+  previewEl = document.createElement('div');
+  previewEl.className = 'drag-preview';
+  document.body.appendChild(previewEl);
+}
+
+function updatePreview(){
+  if (!previewEl || !dragState) return;
+
+  const { booking, dayShift, roomShift } = dragState;
+  const dayMs = 86400000;
+
+  // 计算目标日期
+  const newCheckIn = new Date(
+    new Date(booking.check_in).getTime() + dayShift * dayMs
+  );
+  const newCheckOut = new Date(
+    new Date(booking.check_out).getTime() + dayShift * dayMs
+  );
+
+  // 计算目标房间
+  const roomIndex = ROOMS.findIndex(r => r.name === booking.room);
+  const targetRoom = ROOMS[roomIndex + roomShift];
+
+  // 越界
+  if (!targetRoom){
+    previewEl.style.display = 'none';
+    return;
+  }
+
+  previewEl.style.display = 'block';
+
+  // 校验
+  const crossMonth = isCrossMonth(
+    new Date(booking.check_in),
+    newCheckIn,
+    newCheckOut
+  );
+
+  const conflict = hasConflict({
+    ...booking,
+    room: targetRoom.name,
+    check_in: toISODate(newCheckIn),
+    check_out: toISODate(newCheckOut)
+  });
+
+  const valid = !crossMonth && !conflict;
+
+  // 内容
+  previewEl.innerHTML = `
+    <div><strong>${targetRoom.name}</strong></div>
+    <div>${toISODate(newCheckIn)} → ${toISODate(newCheckOut)}</div>
+  `;
+
+  previewEl.classList.toggle('invalid', !valid);
+
+  // 位置（贴着 ghost）
+  previewEl.style.left =
+    dragState.baseX + dragState.dayShift * DAY_WIDTH + 6 + 'px';
+
+  previewEl.style.top =
+    dragState.startY + dragState.roomShift * ROW_HEIGHT - 40 + 'px';
 }

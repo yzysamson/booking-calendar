@@ -406,3 +406,20 @@ html, body {
 .ghost-invalid {
   background: rgba(220, 0, 0, 0.75) !important;
 }
+
+.drag-preview {
+  position: fixed;
+  z-index: 10000;
+  background: #111;
+  color: #fff;
+  font-size: 11px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  pointer-events: none;
+  box-shadow: 0 6px 16px rgba(0,0,0,.25);
+  white-space: nowrap;
+}
+
+.drag-preview.invalid {
+  background: #c00;
+}
