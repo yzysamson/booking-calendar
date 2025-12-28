@@ -5,7 +5,6 @@
 
 let dragState = null;
 let longPressTimer = null;
-let ghostEl = null;
 let dropIndicatorEl = null;
 const ROOM_COL_WIDTH = 88;   // 和 CSS 的 .room width 一致
 const HEADER_HEIGHT = 34;   // header 那一行的高度
@@ -37,18 +36,8 @@ function cancelLongPress(){
   longPressTimer = null;
 }
 
-
 function startDrag(e, booking){
-  // 🔒 保证 e 是事件
   if (!e || !booking) return;
-
-  // ✅ 稳定拿到 bar DOM（不依赖 e.target）
-  const barEl = document.querySelector(
-    `.bar[data-booking-id="${booking.id}"]`
-  );
-  if (!barEl) return;   // ✅ 现在合法了（在 function 内）
-
-  const barRect = barEl.getBoundingClientRect();
 
   dragState = {
     booking,
@@ -58,16 +47,13 @@ function startDrag(e, booking){
     roomShift: 0
   };
 
-  createGhost(booking);
-  updateGhostPosition();
+  createDropIndicator();
+  updateDropIndicator();
 
   document.addEventListener('pointermove', onPointerMove);
   document.addEventListener('pointerup', onPointerUp);
-
-  createDropIndicator();
-updateDropIndicator();
-
 }
+
 
 // =====================
 // MOVE
@@ -81,7 +67,6 @@ function onPointerMove(e){
   dragState.dayShift = Math.round(dx / DAY_WIDTH);
   dragState.roomShift = Math.round(dy / ROW_HEIGHT);
 
-  updateGhostPosition();
   updateDropIndicator();
 }
 
@@ -95,18 +80,15 @@ async function onPointerUp(){
 
   if (ok && dropIndicatorEl){
     dropIndicatorEl.classList.add('success');
-
-    // 等动画跑完再 cleanup
     setTimeout(() => {
-      cleanupGhost();
       cleanup();
       render();
     }, 180);
   } else {
-    cleanupGhost();
     cleanup();
   }
 }
+
 
 
 // =====================
@@ -199,38 +181,6 @@ async function syncBooking(b){
       .eq('id', b.id);
   } catch (err){
     console.error('Supabase update failed', err);
-  }
-}
-
-// =====================
-// GHOST BAR
-// =====================
-function createGhost(booking){
-  ghostEl = document.createElement('div');
-  ghostEl.className = 'bar';
-  ghostEl.style.position = 'fixed';
-  ghostEl.style.pointerEvents = 'none';
-  ghostEl.style.opacity = '0.6';
-  ghostEl.style.zIndex = '9999';
-  ghostEl.textContent = formatRM(booking.price);
-
-  document.body.appendChild(ghostEl);
-}
-
-function updateGhostPosition(){
-  if (!ghostEl || !dragState) return;
-
-  ghostEl.style.left =
-    dragState.startX + dragState.dayShift * DAY_WIDTH + 'px';
-
-  ghostEl.style.top =
-    dragState.startY + dragState.roomShift * ROW_HEIGHT + 'px';
-}
-
-function cleanupGhost(){
-  if (ghostEl){
-    ghostEl.remove();
-    ghostEl = null;
   }
 }
 
