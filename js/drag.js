@@ -93,7 +93,6 @@ if (isCrossMonth(baseDate, previewCheckIn, previewCheckOut)){
 }
 updateDropIndicator();
 
-}
 
 // =====================
 // DROP
