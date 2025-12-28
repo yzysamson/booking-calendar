@@ -116,30 +116,50 @@ async function onPointerUp(){
 // APPLY RESULT
 // =====================
 function applyDragResult(){
-  const { booking, dayShift, roomShift} = dragState;
 
-  if (!dayShift && !roomShift) return false;
+  // ===== 1️⃣ 从 indicator 取最终结果 =====
+  const {
+    booking,
+    targetDayIndex,
+    targetRoomIndex
+  } = dragState;
 
-  // ===== 房间计算 =====
-  const roomIndex = ROOMS.findIndex(r => r.name === booking.room);
-  const newRoomIndex = roomIndex + roomShift;
-
-  if (newRoomIndex < 0 || newRoomIndex >= ROOMS.length){
+  // 安全检查（防御）
+  if (
+    targetDayIndex == null ||
+    targetRoomIndex == null
+  ){
     return false;
   }
 
-  // ===== 日期计算（全部先算完）=====
+  // ===== 2️⃣ 房间计算（Step 4）=====
+  if (
+    targetRoomIndex < 0 ||
+    targetRoomIndex >= ROOMS.length
+  ){
+    return false;
+  }
+
+  const newRoom = ROOMS[targetRoomIndex];
+
+  // ===== 3️⃣ 日期计算（Step 3）=====
+  const baseDayIndex = DAYS.indexOf(booking.check_in);
+  if (baseDayIndex === -1){
+    return false;
+  }
+
+  const dayDelta = targetDayIndex - baseDayIndex;
   const dayMs = 86400000;
 
- const newCheckIn = new Date(
-  new Date(booking.check_in).getTime() + dayShift * dayMs
-);
+  const newCheckIn = new Date(
+    new Date(booking.check_in).getTime() + dayDelta * dayMs
+  );
 
-const newCheckOut = new Date(
-  new Date(booking.check_out).getTime() + dayShift * dayMs
-);
+  const newCheckOut = new Date(
+    new Date(booking.check_out).getTime() + dayDelta * dayMs
+  );
 
-  // ===== 当月限制（现在用，已初始化）=====
+  // ===== 4️⃣ 当月限制 =====
   const baseDate = new Date(booking.check_in);
 
   if (
@@ -150,9 +170,7 @@ const newCheckOut = new Date(
     return false;
   }
 
-  // ===== 冲突检测 =====
-  const newRoom = ROOMS[newRoomIndex];
-
+  // ===== 5️⃣ 冲突检测（已排除自己）=====
   const testBooking = {
     ...booking,
     room_id: newRoom.id,
@@ -166,10 +184,10 @@ const newCheckOut = new Date(
     return false;
   }
 
-  // ===== 本地更新 =====
+  // ===== 6️⃣ 本地更新 =====
   Object.assign(booking, testBooking);
 
-  // ===== Supabase 同步（异步，不阻塞 UI）=====
+  // ===== 7️⃣ Supabase 同步（异步）=====
   syncBooking(booking);
 
   return true;
@@ -337,5 +355,9 @@ function updateDropIndicator(){
   dropIndicatorEl.style.height = ROW_HEIGHT + 'px';
 
   dropIndicatorEl.classList.toggle('invalid', !valid);
+
+  dragState.targetDayIndex = targetDayIndex;
+dragState.targetRoomIndex = targetRoomIndex;
+
 }
 
