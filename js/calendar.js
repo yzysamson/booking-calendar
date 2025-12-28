@@ -78,6 +78,8 @@ function render(){
   html += `
   <div class="bar src-${norm(b.source)}"
        style="grid-column:span ${span}"
+        data-booking-id="${b.id}"
+       onpointerdown="onBarPointerDown(event, ${b.id})"
        onclick="openEdit(${b.id})">
     <span class="bar-price">${formatRM(b.price)}</span>
   </div>
