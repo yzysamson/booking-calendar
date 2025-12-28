@@ -78,6 +78,7 @@ function startDrag(e, booking){
 function onPointerMove(e){
   if (!dragState) return;
 
+  didDrag = true;
   // ⭐ iOS Safari 必须
   e.preventDefault();
 
@@ -209,17 +210,21 @@ function applyDragResult(){
 // =====================
 function hasConflict(test){
   return BOOKINGS.some(b => {
-    // ⭐ 核心：跳过当前正在拖的 booking
+
+    // ⭐ 关键：忽略正在被拖动的 booking 自己
     if (b.id === test.id) return false;
 
+    // 房间不同，不算冲突
     if (b.room !== test.room) return false;
 
+    // 时间是否重叠
     return (
       test.check_in < b.check_out &&
       test.check_out > b.check_in
     );
   });
 }
+
 
 // =====================
 // SUPABASE UPDATE
