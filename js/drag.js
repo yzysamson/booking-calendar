@@ -100,13 +100,16 @@ function applyDragResult(){
   const newCheckIn = new Date(new Date(booking.check_in).getTime() + dayShift * dayMs);
   const newCheckOut = new Date(new Date(booking.check_out).getTime() + dayShift * dayMs);
 
-  const newBooking = {
-    ...booking,
-    room: ROOMS[newRoomIndex].name,
-    check_in: toISODate(newCheckIn),
-check_out: toISODate(newCheckOut)
+  const newRoom = ROOMS[newRoomIndex];
 
-  };
+const newBooking = {
+  ...booking,
+  room_id: newRoom.id,          // ✅ 用 room_id
+  room: newRoom.name,           // UI 用（不进 DB）
+  check_in: toISODate(newCheckIn),
+  check_out: toISODate(newCheckOut)
+};
+
 
   // 2️⃣ 冲突检测
   if (hasConflict(newBooking)){
@@ -142,8 +145,8 @@ async function syncBooking(b){
   try {
     await sb
       .from('bookings')
-      .update({
-        room: b.room,
+      .update({   
+        room_id: b.room_id,
         check_in: b.check_in,
         check_out: b.check_out
       })
