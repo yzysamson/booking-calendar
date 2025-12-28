@@ -310,7 +310,6 @@ function updateDropIndicator(){
   const dayMs = 86400000;
 
   const appEl = document.getElementById('app');
-  const appRect = appEl.getBoundingClientRect();
 
   // ===== 房间 index =====
   const baseRoomIndex = ROOMS.findIndex(r => r.name === booking.room);
@@ -368,11 +367,11 @@ function updateDropIndicator(){
   // ===== ⭐ 精准对齐到 grid（关键）=====
   dropIndicatorEl.style.display = 'block';
 
-  dropIndicatorEl.style.left =
-    (dayRect.left - appRect.left) + 'px';
+ dropIndicatorEl.style.left =
+  targetDayCell.offsetLeft + 'px';
 
-  dropIndicatorEl.style.top =
-    (rowRect.top - appRect.top) + 'px';
+dropIndicatorEl.style.top =
+  targetRowEl.offsetTop + 'px';
 
   dropIndicatorEl.style.width =
     spanDays * DAY_WIDTH + 'px';
