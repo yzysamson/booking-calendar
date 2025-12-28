@@ -17,13 +17,15 @@ const LONG_PRESS_MS = 300;
 
 
 function lockScroll(){
-  document.body.style.overflow = 'hidden';
-  document.body.style.touchAction = 'none';
+  const content = document.querySelector('.content');
+  content.style.overflow = 'hidden';
+  content.style.touchAction = 'none';
 }
 
 function unlockScroll(){
-  document.body.style.overflow = '';
-  document.body.style.touchAction = '';
+  const content = document.querySelector('.content');
+  content.style.overflow = '';
+  content.style.touchAction = '';
 }
 
 
@@ -54,6 +56,7 @@ function cancelLongPress(){
 function startDrag(e, booking){
   if (!e || !booking) return;
 
+  // ⭐⭐ 关键：锁滚动
   lockScroll(); 
 
   dragState = {
