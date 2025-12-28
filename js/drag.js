@@ -179,12 +179,17 @@ const newCheckOut = new Date(
 // CONFLICT CHECK
 // =====================
 function hasConflict(test){
-  return BOOKINGS.some(b =>
-    b.id !== test.id &&
-    b.room === test.room &&
-    test.check_in < b.check_out &&
-    test.check_out > b.check_in
-  );
+  return BOOKINGS.some(b => {
+    // ⭐ 核心：跳过当前正在拖的 booking
+    if (b.id === test.id) return false;
+
+    if (b.room !== test.room) return false;
+
+    return (
+      test.check_in < b.check_out &&
+      test.check_out > b.check_in
+    );
+  });
 }
 
 // =====================
