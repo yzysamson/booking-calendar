@@ -47,10 +47,13 @@ const grabOffsetPx = e.clientX - barRect.left;
 const grabDayOffset = Math.floor(grabOffsetPx / DAY_WIDTH);
 
 function startDrag(e, booking){
+  
   const barEl = e.target.closest('.bar');
+  
   if (!barEl) return;
 
   const barRect = barEl.getBoundingClientRect();
+  const checkInLeftX = barRect.left;
 
   // ① 先算所有需要的值（不要提前用）
   const grabOffsetPx = e.clientX - barRect.left;
@@ -58,13 +61,13 @@ function startDrag(e, booking){
 
   // ② 再初始化 dragState（一次性）
   dragState = {
-    booking,
-    startX: e.clientX,
-    startY: e.clientY,
-    dayShift: 0,
-    roomShift: 0,
-    grabDayOffset
-  };
+  booking,
+  startY: e.clientY,
+  baseX: checkInLeftX,   // ⭐ 永远以 check-in 为基准
+  dayShift: 0,
+  roomShift: 0
+};
+
 
   createGhost(e, booking);
 
@@ -78,7 +81,7 @@ function startDrag(e, booking){
 function onPointerMove(e){
   if (!dragState) return;
 
-  const dx = e.clientX - dragState.startX;
+  const dx = e.clientX - dragState.baseX;
   const dy = e.clientY - dragState.startY;
 
   dragState.effectiveDayShift = Math.round(dx / DAY_WIDTH);
@@ -121,7 +124,7 @@ function applyDragResult(){
 
   // ===== 日期计算（全部先算完）=====
   const dayMs = 86400000;
-  const effectiveDayShift = dayShift - grabDayOffset;
+  const effectiveDayShift = dayShift;
 
   const newCheckIn = new Date(
     new Date(booking.check_in).getTime() + effectiveDayShift * dayMs
