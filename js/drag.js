@@ -280,16 +280,38 @@ function updateDropIndicator(){
   const { booking, dayShift, roomShift } = dragState;
   const dayMs = 86400000;
 
-  // 目标房间
-  const roomIndex = ROOMS.findIndex(r => r.name === booking.room);
-  const targetRoom = ROOMS[roomIndex + roomShift];
+  // ===== 目标 room =====
+  const baseRoomIndex = ROOMS.findIndex(r => r.name === booking.room);
+  const targetRoomIndex = baseRoomIndex + roomShift;
+  const rows = document.querySelectorAll('#app .row');
 
-  if (!targetRoom){
+  if (targetRoomIndex < 0 || targetRoomIndex >= rows.length){
     dropIndicatorEl.style.display = 'none';
     return;
   }
 
-  // 目标日期
+  const targetRowEl = rows[targetRoomIndex];
+  const rowRect = targetRowEl.getBoundingClientRect();
+
+  // ===== booking 起始 day index =====
+  const baseDayIndex = DAYS.indexOf(booking.check_in);
+  const targetDayIndex = baseDayIndex + dayShift;
+
+  if (targetDayIndex < 0 || targetDayIndex >= DAYS.length){
+    dropIndicatorEl.style.display = 'none';
+    return;
+  }
+
+  // header 里的 day cell（第 targetDayIndex 个）
+  const headerCells = document.querySelectorAll('#app .header .cell');
+  const targetDayCell = headerCells[targetDayIndex];
+  const dayRect = targetDayCell.getBoundingClientRect();
+
+  // ===== booking 长度 =====
+  const spanDays =
+    (new Date(booking.check_out) - new Date(booking.check_in)) / dayMs;
+
+  // ===== 合法性 =====
   const newCheckIn = new Date(
     new Date(booking.check_in).getTime() + dayShift * dayMs
   );
@@ -297,11 +319,6 @@ function updateDropIndicator(){
     new Date(booking.check_out).getTime() + dayShift * dayMs
   );
 
-  // booking 长度（天）
-  const spanDays =
-    (new Date(booking.check_out) - new Date(booking.check_in)) / dayMs;
-
-  // === 合法性判断 ===
   const crossMonth = isCrossMonth(
     new Date(booking.check_in),
     newCheckIn,
@@ -310,61 +327,20 @@ function updateDropIndicator(){
 
   const conflict = hasConflict({
     ...booking,
-    room: targetRoom.name,
+    room: ROOMS[targetRoomIndex].name,
     check_in: toISODate(newCheckIn),
     check_out: toISODate(newCheckOut)
   });
 
   const valid = !crossMonth && !conflict;
 
-  // === 定位（与 ghost 同一套坐标系）===
+  // ===== 精准定位（核心）=====
   dropIndicatorEl.style.display = 'block';
-
-  const calendarRect = document
-  .getElementById('app')
-  .getBoundingClientRect();
-
-// 当前 booking 的起始 day index（在当前 month）
-const baseDayIndex =
-  DAYS.indexOf(dragState.booking.check_in);
-
-// 目标 day index
-const targetDayIndex = baseDayIndex + dayShift;
-
-// 当前 booking 的 room index
-const baseRoomIndex =
-  ROOMS.findIndex(r => r.name === booking.room);
-
-// 目标 room index
-const targetRoomIndex = baseRoomIndex + roomShift;
-
-// === X 对齐到日期 cell ===
-dropIndicatorEl.style.left =
-  calendarRect.left +
-  ROOM_COL_WIDTH +
-  targetDayIndex * DAY_WIDTH +
-  'px';
-
-// === Y 对齐到房间 row ===
-dropIndicatorEl.style.top =
-  calendarRect.top +
-  HEADER_HEIGHT +
-  targetRoomIndex * ROW_HEIGHT +
-  'px';
-
-
-  dropIndicatorEl.style.width =
-    spanDays * DAY_WIDTH + 'px';
-
-  dropIndicatorEl.style.height =
-    ROW_HEIGHT + 'px';
+  dropIndicatorEl.style.left = dayRect.left + 'px';
+  dropIndicatorEl.style.top = rowRect.top + 'px';
+  dropIndicatorEl.style.width = spanDays * DAY_WIDTH + 'px';
+  dropIndicatorEl.style.height = ROW_HEIGHT + 'px';
 
   dropIndicatorEl.classList.toggle('invalid', !valid);
 }
 
-function cleanupDropIndicator(){
-  if (dropIndicatorEl){
-    dropIndicatorEl.remove();
-    dropIndicatorEl = null;
-  }
-}
