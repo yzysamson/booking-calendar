@@ -49,12 +49,9 @@ function startDrag(e, booking){
 
   const barRect = barEl.getBoundingClientRect();
 
-  // ⭐ 横向永远以 check-in cell 左边为基准
-  const baseX = barRect.left;
-
   dragState = {
     booking,
-    baseX,
+    startX: e.clientX,
     startY: e.clientY,
     dayShift: 0,
     roomShift: 0
@@ -77,27 +74,15 @@ updateDropIndicator();
 function onPointerMove(e){
   if (!dragState) return;
 
-  const dx = e.clientX - dragState.baseX;
-  dragState.dayShift = Math.round(dx / DAY_WIDTH);
-
+  const dx = e.clientX - dragState.startX;
   const dy = e.clientY - dragState.startY;
+
+  dragState.dayShift = Math.round(dx / DAY_WIDTH);
   dragState.roomShift = Math.round(dy / ROW_HEIGHT);
 
-updateGhostPosition();
-
-
-  // ===== ghost 月边界提示 =====
-const dayMs = 86400000;
-
-const previewCheckIn = new Date(
-  new Date(dragState.booking.check_in).getTime() +
-  dragState.dayShift * dayMs
-);
-
-const previewCheckOut = new Date(
-  new Date(dragState.booking.check_out).getTime() +
-  dragState.dayShift * dayMs
-);
+  updateGhostPosition();
+  updateDropIndicator();
+}
 
 const baseDate = new Date(dragState.booking.check_in);
 
@@ -130,7 +115,7 @@ async function onPointerUp(){
 // APPLY RESULT
 // =====================
 function applyDragResult(){
-  const { booking, dayShift, roomShift, grabDayOffset } = dragState;
+  const { booking, dayShift, roomShift} = dragState;
 
   if (!dayShift && !roomShift) return false;
 
@@ -144,14 +129,13 @@ function applyDragResult(){
 
   // ===== 日期计算（全部先算完）=====
   const dayMs = 86400000;
-  const effectiveDayShift = dayShift;
 
   const newCheckIn = new Date(
-    new Date(booking.check_in).getTime() + effectiveDayShift * dayMs
+    new Date(booking.check_in).getTime()
   );
 
   const newCheckOut = new Date(
-    new Date(booking.check_out).getTime() + effectiveDayShift * dayMs
+    new Date(booking.check_out).getTime()
   );
 
   // ===== 当月限制（现在用，已初始化）=====
@@ -239,7 +223,7 @@ function updateGhostPosition(){
   if (!ghostEl || !dragState) return;
 
   ghostEl.style.left =
-    dragState.baseX + dragState.dayShift * DAY_WIDTH + 'px';
+    dragState.startX + dragState.dayShift * DAY_WIDTH + 'px';
 
   ghostEl.style.top =
     dragState.startY + dragState.roomShift * ROW_HEIGHT + 'px';
@@ -337,10 +321,10 @@ function updateDropIndicator(){
   dropIndicatorEl.style.display = 'block';
 
   dropIndicatorEl.style.left =
-    dragState.baseX + dragState.dayShift * DAY_WIDTH + 'px';
+  dragState.startX + dragState.dayShift * DAY_WIDTH + 'px';
 
-  dropIndicatorEl.style.top =
-    dragState.startY + dragState.roomShift * ROW_HEIGHT + 'px';
+dropIndicatorEl.style.top =
+  dragState.startY + dragState.roomShift * ROW_HEIGHT + 'px';
 
   dropIndicatorEl.style.width =
     spanDays * DAY_WIDTH + 'px';
