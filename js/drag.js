@@ -37,7 +37,10 @@ function cancelLongPress(){
 // DRAG START
 // =====================
 
-const barEl = e.target.closest('.bar');
+const barEl = document.querySelector(
+  `.bar[data-booking-id="${booking.id}"]`
+);
+if (!barEl) return;
 const barRect = barEl.getBoundingClientRect();
 
 // 你按下的位置，距离 bar 左边多少 px
@@ -53,20 +56,20 @@ function startDrag(e, booking){
   if (!barEl) return;
 
   const barRect = barEl.getBoundingClientRect();
-  const checkInLeftX = barRect.left;
+  const baseX = barRect.left;
 
   // ① 先算所有需要的值（不要提前用）
   const grabOffsetPx = e.clientX - barRect.left;
   const grabDayOffset = Math.floor(grabOffsetPx / DAY_WIDTH);
 
-  // ② 再初始化 dragState（一次性）
-  dragState = {
+ dragState = {
   booking,
-  startY: e.clientY,
-  baseX: checkInLeftX,   // ⭐ 永远以 check-in 为基准
+  baseX,              // ⭐ 横向锚点
+  startY: e.clientY,  // 纵向仍然用 pointer
   dayShift: 0,
   roomShift: 0
 };
+;
 
 
   createGhost(e, booking);
@@ -82,12 +85,13 @@ function onPointerMove(e){
   if (!dragState) return;
 
   const dx = e.clientX - dragState.baseX;
-  const dy = e.clientY - dragState.startY;
+  dragState.dayShift = Math.round(dx / DAY_WIDTH);
 
-  dragState.effectiveDayShift = Math.round(dx / DAY_WIDTH);
+  const dy = e.clientY - dragState.startY;
   dragState.roomShift = Math.round(dy / ROW_HEIGHT);
 
-  updateGhostPosition();
+updateGhostPosition();
+
 
   // ===== ghost 月边界提示 =====
 const dayMs = 86400000;
