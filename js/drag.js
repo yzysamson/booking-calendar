@@ -36,13 +36,24 @@ function cancelLongPress(){
 // =====================
 // DRAG START
 // =====================
+
+const barEl = e.target.closest('.bar');
+const barRect = barEl.getBoundingClientRect();
+
+// 你按下的位置，距离 bar 左边多少 px
+const grabOffsetPx = e.clientX - barRect.left;
+
+// 转成“第几个 day”
+const grabDayOffset = Math.floor(grabOffsetPx / DAY_WIDTH);
+
 function startDrag(e, booking){
   dragState = {
     booking,
     startX: e.clientX,
     startY: e.clientY,
     dayShift: 0,
-    roomShift: 0
+    roomShift: 0,
+    grabDayOffset
   };
 
   createGhost(e, booking);
@@ -60,7 +71,7 @@ function onPointerMove(e){
   const dx = e.clientX - dragState.startX;
   const dy = e.clientY - dragState.startY;
 
-  dragState.dayShift = Math.round(dx / DAY_WIDTH);
+  dragState.effectiveDayShift = Math.round(dx / DAY_WIDTH);
   dragState.roomShift = Math.round(dy / ROW_HEIGHT);
 
   updateGhostPosition();
@@ -86,8 +97,11 @@ async function onPointerUp(){
 // APPLY RESULT
 // =====================
 function applyDragResult(){
-  const { booking, dayShift, roomShift } = dragState;
-  if (!dayShift && !roomShift) return false;
+  const { booking, dayShift, roomShift, grabDayOffset } = dragState;
+
+// ⭐ 关键修正：以第一个 cell 为基准
+const effectiveDayShift = dayShift - grabDayOffset;
+  if (!effectiveDayShift && !roomShift) return false;
 
   const roomIndex = ROOMS.findIndex(r => r.name === booking.room);
   const newRoomIndex = roomIndex + roomShift;
@@ -97,8 +111,8 @@ function applyDragResult(){
   }
 
   const dayMs = 86400000;
-  const newCheckIn = new Date(new Date(booking.check_in).getTime() + dayShift * dayMs);
-  const newCheckOut = new Date(new Date(booking.check_out).getTime() + dayShift * dayMs);
+  const newCheckIn = new Date(new Date(booking.check_in).getTime() + effectiveDayShift * dayMs);
+  const newCheckOut = new Date(new Date(booking.check_out).getTime() + effectiveDayShift * dayMs);
 
   const newRoom = ROOMS[newRoomIndex];
 
@@ -175,7 +189,7 @@ function createGhost(e, booking){
 function updateGhostPosition(){
   if (!ghostEl || !dragState) return;
 
-  ghostEl.style.left = dragState.startX + dragState.dayShift * DAY_WIDTH + 'px';
+  ghostEl.style.left = dragState.startX + dragState.effectiveDayShift * DAY_WIDTH + 'px';
   ghostEl.style.top  = dragState.startY + dragState.roomShift * ROW_HEIGHT + 'px';
 }
 
