@@ -20,9 +20,10 @@ saveBtn.onclick=async()=>{
 deleteBtn.onclick = async () => {
 
   const ok = confirm(
-    'Are you sure you want to delete this booking?\n\n' +
-    'This action cannot be undone.'
-  );
+  'Confirm deletion\n\n' +
+  'This booking will be permanently removed.\n' +
+  'This action cannot be undone.'
+);
 
   if (!ok) return;
 
