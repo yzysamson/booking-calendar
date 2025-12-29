@@ -17,10 +17,24 @@ saveBtn.onclick=async()=>{
   closeModal();loadAll();
 };
 
-deleteBtn.onclick=async()=>{
-  await sb.from('bookings').delete().eq('id',editing.id);
-  closeModal();loadAll();
+deleteBtn.onclick = async () => {
+
+  const ok = confirm(
+    'Are you sure you want to delete this booking?\n\n' +
+    'This action cannot be undone.'
+  );
+
+  if (!ok) return;
+
+  await sb
+    .from('bookings')
+    .delete()
+    .eq('id', currentId);
+
+  closeModal();
+  loadAll();
 };
+
 
 loadAll();
 
