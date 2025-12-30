@@ -78,7 +78,7 @@ loginBtn.onclick = async () => {
   const { error } = await sb.auth.signInWithOtp({
     email,
     options: {
-      redirectTo: window.location.origin
+      redirectTo: 'https://zyzsamson.github.io'
     }
   });
 
