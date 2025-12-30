@@ -70,7 +70,12 @@ document.getElementById('loginBtn').onclick = async () => {
     return;
   }
 
-  const { error } = await sb.auth.signInWithOtp({ email });
+  await sb.auth.signInWithOtp({
+  email,
+  options: {
+    redirectTo: window.location.origin
+  }
+});
 
   if (error) {
   alert(
