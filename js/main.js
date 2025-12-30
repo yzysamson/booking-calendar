@@ -1,6 +1,28 @@
 let appInitialized = false;
 
 // =====================
+// AUTH UI
+// =====================
+function showLogin() {
+  document.getElementById('loginView').style.display = 'block';
+  document.getElementById('appView').style.display = 'none';
+
+  const userBar = document.getElementById('userBar');
+  if (userBar) userBar.style.display = 'none';
+}
+
+function showApp() {
+  document.getElementById('loginView').style.display = 'none';
+  document.getElementById('appView').style.display = 'block';
+
+  const userBar = document.getElementById('userBar');
+  if (userBar) userBar.style.display = 'inline-flex';
+
+  // ⭐ 只在这里 loadAll
+  loadAll();
+}
+
+// =====================
 // AUTH GATE (Step 2)
 // =====================
 
