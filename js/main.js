@@ -61,8 +61,9 @@ function showApp() {
   }
 }
 
+const loginBtn = document.getElementById('loginBtn');
 
-document.getElementById('loginBtn').onclick = async () => {
+loginBtn.onclick = async () => {
   const email = document.getElementById('loginEmail').value.trim();
 
   if (!email) {
@@ -70,25 +71,39 @@ document.getElementById('loginBtn').onclick = async () => {
     return;
   }
 
-  await sb.auth.signInWithOtp({
-  email,
-  options: {
-    redirectTo: window.location.origin
-  }
-});
+  // ⛔ 防止重复点击
+  loginBtn.disabled = true;
+  loginBtn.textContent = 'Sending…';
+
+  const { error } = await sb.auth.signInWithOtp({
+    email,
+    options: {
+      redirectTo: window.location.origin
+    }
+  });
 
   if (error) {
-  alert(
-    'Sign-in failed.\n\n' +
-    error.message
-  );
-} else {
-  alert(
-    'Login link sent.\n\n' +
-    'Please check your email to continue.'
-  );
-}
+    if (error.status === 429) {
+      alert(
+        'Too many requests.\n\n' +
+        'Please wait a few minutes before trying again.'
+      );
+    } else {
+      alert(error.message);
+    }
+
+    // ❗只有失败才恢复按钮
+    loginBtn.disabled = false;
+    loginBtn.textContent = 'Send login link';
+  } else {
+    alert(
+      'Login link sent.\n\n' +
+      'Please check your email.'
+    );
+    // 成功后不恢复按钮，逼用户等邮件
+  }
 };
+
 
 sb.auth.onAuthStateChange((event, session) => {
   if (session?.user) {
