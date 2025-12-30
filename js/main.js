@@ -194,3 +194,16 @@ document.getElementById('logoutBtn').onclick = async () => {
   showLogin();
 };
 
+// =====================
+// SAFARI HARD FALLBACK
+// =====================
+setTimeout(async () => {
+  try {
+    const { data } = await sb.auth.getUser();
+    if (data?.user) {
+      showApp();
+    }
+  } catch (e) {
+    console.error(e);
+  }
+}, 800);
